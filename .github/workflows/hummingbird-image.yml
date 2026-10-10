@@ -1,0 +1,185 @@
+name: Hummingbird image
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+  push:
+    branches:
+      - "**"
+    paths:
+      - ".github/workflows/hummingbird-image.yml"
+      - "docker/hummingbird.Dockerfile"
+      - "go.mod"
+      - "go.sum"
+      - "**/*.go"
+      - "home-assistant/**"
+
+concurrency:
+  group: hummingbird-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+
+env:
+  GO_BUILDER_IMAGE: registry.access.redhat.com/hi/go:1.25-builder
+  RUNTIME_IMAGE: registry.access.redhat.com/hi/python:3.13-builder
+  REGISTRY_IMAGE: ghcr.io/rainerleber/go2rtc-hummingbird
+
+jobs:
+  validate:
+    name: Verify bases, build, and test
+    runs-on: ubuntu-latest
+    outputs:
+      go_builder: ${{ steps.bases.outputs.go_builder }}
+      runtime: ${{ steps.bases.outputs.runtime }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+
+      - name: Resolve and verify Hummingbird bases
+        id: bases
+        shell: bash
+        run: |
+          set -euo pipefail
+          key_url="https://security.access.redhat.com/data/63405576.txt"
+
+          resolve() {
+            local image="$1"
+            local digest
+            digest="$(docker buildx imagetools inspect "$image" --format '{{json .Manifest.Digest}}' | tr -d '"')"
+            test -n "$digest"
+            printf '%s@%s' "$image" "$digest"
+          }
+
+          go_builder="$(resolve "$GO_BUILDER_IMAGE")"
+          runtime="$(resolve "$RUNTIME_IMAGE")"
+
+          cosign verify --key "$key_url" --insecure-ignore-tlog "$go_builder"
+          cosign verify --key "$key_url" --insecure-ignore-tlog "$runtime"
+
+          echo "go_builder=$go_builder" >> "$GITHUB_OUTPUT"
+          echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
+
+      - name: Calculate immutable app version
+        id: version
+        shell: bash
+        run: echo "version=$(date -u +'%Y.%m.%d').${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Build amd64 validation image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: docker/hummingbird.Dockerfile
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: go2rtc-hummingbird:test
+          build-args: |
+            GO_BUILDER_IMAGE=${{ steps.bases.outputs.go_builder }}
+            RUNTIME_IMAGE=${{ steps.bases.outputs.runtime }}
+            BUILD_VERSION=${{ steps.version.outputs.version }}
+          cache-from: type=gha,scope=hummingbird-amd64
+          cache-to: type=gha,mode=max,scope=hummingbird-amd64
+
+      - name: Test runtime and required codecs
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm go2rtc-hummingbird:test -version
+          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -version
+          encoders="$(docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -encoders 2>/dev/null)"
+          grep -Eq 'libx264|libopenh264|h264_vaapi|h264_v4l2m2m' <<< "$encoders"
+          grep -Eq ' aac ' <<< "$encoders"
+
+  publish:
+    name: Publish signed multi-architecture image
+    needs: validate
+    if: >-
+      github.ref == 'refs/heads/master' &&
+      (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: docker/hummingbird.Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.REGISTRY_IMAGE }}:${{ needs.validate.outputs.version }}
+            ${{ env.REGISTRY_IMAGE }}:latest
+          build-args: |
+            GO_BUILDER_IMAGE=${{ needs.validate.outputs.go_builder }}
+            RUNTIME_IMAGE=${{ needs.validate.outputs.runtime }}
+            BUILD_VERSION=${{ needs.validate.outputs.version }}
+          labels: |
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+          provenance: mode=max
+          sbom: true
+          cache-from: type=gha,scope=hummingbird-multiarch
+          cache-to: type=gha,mode=max,scope=hummingbird-multiarch
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+
+      - name: Sign published image
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: cosign sign --yes "${REGISTRY_IMAGE}@${DIGEST}"
+
+      - name: Publish build provenance attestation
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-name: ${{ env.REGISTRY_IMAGE }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Update Home Assistant app version
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i -E "s/^version: .*/version: \"${VERSION}\"/" home-assistant/config.yaml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add home-assistant/config.yaml
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "chore(app): publish ${VERSION} [skip ci]"
+          git push origin HEAD:master

@@ -22,6 +22,50 @@
 
 Ultimate camera streaming application with support for dozens formats and protocols.
 
+## About this fork
+
+This fork publishes a small, independent Home Assistant app and container image
+for users who do not want to trust or install the complete upstream app
+catalog. The application source remains the upstream go2rtc source; the
+container is rebuilt in this repository on signed
+[Project Hummingbird / Red Hat Hardened Images](https://hummingbird-project.io/)
+instead of consuming the upstream go2rtc container.
+
+The build pipeline:
+
+- resolves the Hummingbird build and runtime images to immutable digests;
+- verifies their Red Hat signatures before building;
+- runs the Go test suite and checks FFmpeg H.264/AAC encoder availability;
+- publishes `amd64` and `arm64` images to
+  `ghcr.io/rainerleber/go2rtc-hummingbird`;
+- attaches an SBOM and build provenance and signs the resulting manifest with
+  GitHub OIDC; and
+- rebuilds every Monday so base-image security updates are consumed even when
+  the go2rtc source does not change.
+
+The workflow and all third-party GitHub Actions are pinned to commit hashes.
+Published app versions use immutable `YYYY.MM.DD.RUN` tags; `latest` is provided
+for standalone testing only.
+
+### Home Assistant installation
+
+Add only this repository to the Home Assistant App Store:
+
+```text
+https://github.com/rainerleber/go2rtc
+```
+
+Then install **go2rtc Hummingbird**. Its documentation and the secure,
+loopback-only Reolink/Alexa example are in
+[`home-assistant/DOCS.md`](home-assistant/DOCS.md).
+
+This image deliberately supports only `amd64` and `arm64`, the architectures
+published by Hummingbird. It is not a byte-for-byte copy of the upstream Alpine
+image. The container retains go2rtc's FFmpeg/command execution features, so its
+API must not be exposed to an untrusted network. The Home Assistant app receives
+host networking and its own configuration directory, but no Supervisor token,
+Home Assistant configuration mount, device access, or privileged mode.
+
 - zero-dependency [small app](#go2rtc-binary) for all OS (Windows, macOS, Linux, FreeBSD)
 - zero-delay for many [supported protocols](#codecs-madness) (lowest possible streaming latency)
 - [streaming input](#streaming-input) from dozens formats and protocols

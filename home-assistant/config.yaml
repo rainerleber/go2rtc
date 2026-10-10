@@ -1,0 +1,18 @@
+# https://developers.home-assistant.io/docs/apps/configuration
+name: go2rtc Hummingbird
+version: "2026.10.10.0"
+slug: go2rtc_hummingbird
+description: Locally rebuilt go2rtc proxy based on signed Hummingbird images
+url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
+arch:
+  - amd64
+  - aarch64
+init: false
+startup: application
+host_network: true
+map:
+  - type: addon_config
+    read_only: false
+options: {}
+schema: false
+image: "ghcr.io/rainerleber/go2rtc-hummingbird"
