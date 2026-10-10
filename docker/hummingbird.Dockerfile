@@ -30,7 +30,7 @@ USER 0
 
 # ffmpeg-free is supplied by the signed Hummingbird package repositories. The
 # workflow verifies at build time that an H.264 encoder is actually available.
-RUN dnf install -y --setopt=install_weak_deps=False ffmpeg-free tini && \
+RUN dnf install -y --setopt=install_weak_deps=False ffmpeg-free && \
     dnf clean all && \
     rm -rf /var/cache/dnf
 
@@ -53,5 +53,5 @@ WORKDIR /config
 # this otherwise unprivileged app keeps WebUI/config writes compatible without
 # granting privileged mode or host filesystem mounts.
 USER 0
-ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/go2rtc"]
+ENTRYPOINT ["/usr/local/bin/go2rtc"]
 CMD ["-config", "/config/go2rtc.yaml"]
