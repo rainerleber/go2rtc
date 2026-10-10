@@ -2,8 +2,9 @@
 
 ## Next
 
-- Import existing Reolink integrations from Home Assistant's read-only
-  configuration mount, avoiding duplicated camera credentials in go2rtc.
+- Generate the proxy configuration from private app options.
+- Keep access limited to the app-specific configuration directory; no Home
+  Assistant configuration mount or Supervisor API token is granted.
 
 ## 2026.10.10.0
 

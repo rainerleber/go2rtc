@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"slices"
 
 	"github.com/rainerleber/go2rtc/internal/alsa"
@@ -19,6 +21,7 @@ import (
 	"github.com/rainerleber/go2rtc/internal/flussonic"
 	"github.com/rainerleber/go2rtc/internal/gopro"
 	"github.com/rainerleber/go2rtc/internal/hass"
+	"github.com/rainerleber/go2rtc/internal/hassaddon"
 	"github.com/rainerleber/go2rtc/internal/hls"
 	"github.com/rainerleber/go2rtc/internal/homekit"
 	"github.com/rainerleber/go2rtc/internal/http"
@@ -52,6 +55,11 @@ import (
 )
 
 func main() {
+	if err := hassaddon.Prepare(); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, "Home Assistant app configuration error:", err)
+		os.Exit(1)
+	}
+
 	// version will be set later from -buildvcs info, this used only as fallback
 	app.Version = "1.9.14"
 

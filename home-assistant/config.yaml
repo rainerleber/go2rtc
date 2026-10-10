@@ -13,8 +13,12 @@ host_network: true
 map:
   - type: addon_config
     read_only: false
-  - type: homeassistant_config
-    read_only: true
-options: {}
-schema: false
+options:
+  camera_host: ""
+  camera_username: ""
+  camera_password: ""
+schema:
+  camera_host: str
+  camera_username: str
+  camera_password: password
 image: "ghcr.io/rainerleber/go2rtc-chainguard"

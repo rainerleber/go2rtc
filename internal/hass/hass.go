@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
 	"strings"
@@ -180,27 +178,6 @@ func importConfig(config string) error {
 			} else {
 				entities[entrie.Title] = fmt.Sprintf("onvif://%s:%d", data.Host, data.Port)
 			}
-
-		case "reolink":
-			var data struct {
-				Host     string `json:"host"`
-				Username string `json:"username"`
-				Password string `json:"password"`
-			}
-			if err = json.Unmarshal(entrie.Data, &data); err != nil {
-				continue
-			}
-			if data.Host == "" || data.Username == "" || data.Password == "" {
-				continue
-			}
-
-			u := &url.URL{
-				Scheme: "rtsp",
-				User:   url.UserPassword(data.Username, data.Password),
-				Host:   net.JoinHostPort(data.Host, "554"),
-				Path:   "/h264Preview_01_sub",
-			}
-			entities[entrie.Title] = u.String()
 
 		default:
 			continue

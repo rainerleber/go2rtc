@@ -13,17 +13,17 @@ configuration described below.
 
 ## Configuration
 
-Create `go2rtc.yaml` in this app's configuration directory. Home Assistant
-mounts that private directory at `/config` inside the app. The app can import
-an existing Reolink integration from Home Assistant's read-only configuration
-mount, so camera credentials do not need to be copied into this file.
+Set `camera_host`, `camera_username`, and `camera_password` in the app's
+Configuration tab. On first start the app writes `go2rtc.yaml` with mode 0600
+inside its private `/config` directory. Use a dedicated Reolink account that
+has live-view permission only.
 
 This example binds every server to loopback and disables WebRTC because the
 Alexa proxy only needs local RTSP. Replace the placeholders locally:
 
 ```yaml
 app:
-  modules: [api, ffmpeg, hass, rtsp]
+  modules: [api, ffmpeg, rtsp]
 
 api:
   listen: "127.0.0.1:1984"
@@ -36,7 +36,7 @@ webrtc:
 
 streams:
   reolink_haustuer:
-    - hass:Front Door
+    - rtsp://VIEW_ONLY_USER:PASSWORD@CAMERA_ADDRESS:554/h264Preview_01_sub
 
   reolink_haustuer_alexa:
     - >-
@@ -54,8 +54,8 @@ Expose only that Generic Camera entity to Alexa.
 
 ## Security notes
 
-- The imported Reolink account should have live-view permission only.
-- Home Assistant's configuration is mounted read-only and is never modified.
+- Use a dedicated Reolink account with live-view permission only.
+- The app has no access to Home Assistant's configuration or Supervisor API.
 - Keep API and RTSP listeners on `127.0.0.1`; do not forward their ports.
 - The image runs without privileged mode and has no host filesystem access.
 - The runtime contains go2rtc and Wolfi's FFmpeg 9 package. It does not include
