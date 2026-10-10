@@ -35,6 +35,7 @@ The build pipeline:
 
 - resolves the public Chainguard Go and Wolfi Base images to immutable digests;
 - verifies their keyless Sigstore signatures before building;
+- runs the RTSP and FFmpeg proxy package tests with upstream's Go version;
 - installs Wolfi's FFmpeg 9 package and checks libx264/AAC encoder availability;
 - publishes `amd64` and `arm64` images to
   `ghcr.io/rainerleber/go2rtc-chainguard`;
