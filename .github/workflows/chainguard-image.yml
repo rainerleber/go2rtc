@@ -48,12 +48,23 @@ jobs:
       - name: Test RTSP and FFmpeg proxy packages
         env:
           CGO_ENABLED: "0"
-        run: >-
-          go test
-          ./internal/ffmpeg/...
-          ./internal/rtsp/...
-          ./pkg/ffmpeg/...
-          ./pkg/rtsp/...
+        shell: bash
+        run: |
+          set -o pipefail
+          test_log="$(mktemp)"
+          if go test \
+            ./internal/ffmpeg/... \
+            ./internal/rtsp/... \
+            ./pkg/ffmpeg/... \
+            ./pkg/rtsp/... 2>&1 | tee "$test_log"; then
+            exit 0
+          fi
+          message="$(tail -n 40 "$test_log")"
+          message="${message//'%'/'%25'}"
+          message="${message//$'\r'/'%0D'}"
+          message="${message//$'\n'/'%0A'}"
+          echo "::error title=Proxy package tests failed::${message}"
+          exit 1
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
