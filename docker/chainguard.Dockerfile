@@ -11,6 +11,8 @@ ARG TARGETARCH
 USER 0
 WORKDIR /src
 
+RUN go version | grep -Eq 'go1\.27(\.| )'
+
 COPY go.mod go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download && go mod verify

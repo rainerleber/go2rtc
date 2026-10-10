@@ -100,8 +100,8 @@ Some formats and protocols go2rtc supports exclusively. They have no equivalent 
 - [`main.go`](../main.go)
 - [`README.md`](../README.md)
 - [`internal/README.md`](../internal/README.md)
-- [`website/.vitepress/config.js`](../website/.vitepress/config.js)
-- [`website/api/openapi.yaml`](../website/api/openapi.yaml)
+- [upstream VitePress configuration](https://github.com/AlexxIT/go2rtc/blob/master/website/.vitepress/config.js)
+- [upstream OpenAPI document](https://github.com/AlexxIT/go2rtc/blob/master/website/api/openapi.yaml)
 - [`www/schema.json`](../www/schema.json)
 
 ## Useful links

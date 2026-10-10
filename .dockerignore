@@ -1,0 +1,7 @@
+.git
+.github
+home-assistant
+**/*_test.go
+**/*.md
+go2rtc.yaml
+go2rtc.json

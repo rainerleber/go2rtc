@@ -2,7 +2,6 @@ package camera
 
 import (
 	"encoding/base64"
-	"strings"
 	"testing"
 
 	"github.com/AlexxIT/go2rtc/pkg/hap"
@@ -10,11 +9,11 @@ import (
 )
 
 func TestNilCharacter(t *testing.T) {
-	var res SetupEndpoints
+	var res SetupEndpointsResponse
 	char := &hap.Character{}
 	err := char.ReadTLV8(&res)
 	require.NotNil(t, err)
-	require.NotNil(t, strings.Contains(err.Error(), "can't read value"))
+	require.Contains(t, err.Error(), "can't read value")
 }
 
 type testTLV8 struct {
@@ -61,9 +60,10 @@ func TestAqaraG3(t *testing.T) {
 			},
 		},
 		{
-			name:   "114",
-			value:  "AaoBAQACEQEBAQIBAAAAAgECAwEABAEAAwsBAoAHAgI4BAMBHgAAAwsBAgAFAgLQAgMBHgAAAwsBAoACAgJoAQMBHgAAAwsBAuABAgIOAQMBHgAAAwsBAkABAgK0AAMBHgAAAwsBAgAFAgLAAwMBHgAAAwsBAgAEAgIAAwMBHgAAAwsBAoACAgLgAQMBHgAAAwsBAuABAgJoAQMBHgAAAwsBAkABAgLwAAMBHg==",
-			actual: &SupportedVideoStreamConfiguration{},
+			name:    "114",
+			noequal: true,
+			value:   "AaoBAQACEQEBAQIBAAAAAgECAwEABAEAAwsBAoAHAgI4BAMBHgAAAwsBAgAFAgLQAgMBHgAAAwsBAoACAgJoAQMBHgAAAwsBAuABAgIOAQMBHgAAAwsBAkABAgK0AAMBHgAAAwsBAgAFAgLAAwMBHgAAAwsBAgAEAgIAAwMBHgAAAwsBAoACAgLgAQMBHgAAAwsBAuABAgJoAQMBHgAAAwsBAkABAgLwAAMBHg==",
+			actual:  &SupportedVideoStreamConfiguration{},
 			expect: &SupportedVideoStreamConfiguration{
 				Codecs: []VideoCodecConfiguration{
 					{
@@ -112,9 +112,10 @@ func TestAqaraG3(t *testing.T) {
 			},
 		},
 		{
-			name:   "116",
-			value:  "AgEAAAACAQEAAAIBAg==",
-			actual: &SupportedRTPConfiguration{},
+			name:    "116",
+			noequal: true,
+			value:   "AgEAAAACAQEAAAIBAg==",
+			actual:  &SupportedRTPConfiguration{},
 			expect: &SupportedRTPConfiguration{
 				SRTPCryptoType: []byte{CryptoAES_CM_128_HMAC_SHA1_80, CryptoAES_CM_256_HMAC_SHA1_80, CryptoDisabled},
 			},
@@ -128,9 +129,10 @@ func TestAqaraG3(t *testing.T) {
 func TestHomebridge(t *testing.T) {
 	tests := []testTLV8{
 		{
-			name:   "114",
-			value:  "AcUBAQACHQEBAAAAAQEBAAABAQICAQAAAAIBAQAAAgECAwEAAwsBAkABAgK0AAMBHgAAAwsBAkABAgLwAAMBDwAAAwsBAkABAgLwAAMBHgAAAwsBAuABAgIOAQMBHgAAAwsBAuABAgJoAQMBHgAAAwsBAoACAgJoAQMBHgAAAwsBAoACAgLgAQMBHgAAAwsBAgAFAgLQAgMBHgAAAwsBAgAFAgLAAwMBHgAAAwsBAoAHAgI4BAMBHgAAAwsBAkAGAgKwBAMBHg==",
-			actual: &SupportedVideoStreamConfiguration{},
+			name:    "114",
+			noequal: true,
+			value:   "AcUBAQACHQEBAAAAAQEBAAABAQICAQAAAAIBAQAAAgECAwEAAwsBAkABAgK0AAMBHgAAAwsBAkABAgLwAAMBDwAAAwsBAkABAgLwAAMBHgAAAwsBAuABAgIOAQMBHgAAAwsBAuABAgJoAQMBHgAAAwsBAoACAgJoAQMBHgAAAwsBAoACAgLgAQMBHgAAAwsBAgAFAgLQAgMBHgAAAwsBAgAFAgLAAwMBHgAAAwsBAoAHAgI4BAMBHgAAAwsBAkAGAgKwBAMBHg==",
+			actual:  &SupportedVideoStreamConfiguration{},
 			expect: &SupportedVideoStreamConfiguration{
 				Codecs: []VideoCodecConfiguration{
 					{
@@ -176,9 +178,10 @@ func TestHomebridge(t *testing.T) {
 func TestScrypted(t *testing.T) {
 	tests := []testTLV8{
 		{
-			name:   "114",
-			value:  "AVIBAQACEwEBAQIBAAAAAgEBAAACAQIDAQADCwECAA8CAnAIAwEeAAADCwECgAcCAjgEAwEeAAADCwECAAUCAtACAwEeAAADCwECQAECAvAAAwEP",
-			actual: &SupportedVideoStreamConfiguration{},
+			name:    "114",
+			noequal: true,
+			value:   "AVIBAQACEwEBAQIBAAAAAgEBAAACAQIDAQADCwECAA8CAnAIAwEeAAADCwECgAcCAjgEAwEeAAADCwECAAUCAtACAwEeAAADCwECQAECAvAAAwEP",
+			actual:  &SupportedVideoStreamConfiguration{},
 			expect: &SupportedVideoStreamConfiguration{
 				Codecs: []VideoCodecConfiguration{
 					{
@@ -200,9 +203,10 @@ func TestScrypted(t *testing.T) {
 			},
 		},
 		{
-			name:   "115",
-			value:  "AScBAQMCIgEBAQIBAAMBAAAAAwEAAAADAQEAAAMBAQAAAwECAAADAQICAQA=",
-			actual: &SupportedAudioStreamConfiguration{},
+			name:    "115",
+			noequal: true,
+			value:   "AScBAQMCIgEBAQIBAAMBAAAAAwEAAAADAQEAAAMBAQAAAwECAAADAQICAQA=",
+			actual:  &SupportedAudioStreamConfiguration{},
 			expect: &SupportedAudioStreamConfiguration{
 				Codecs: []AudioCodecConfiguration{
 					{
@@ -224,9 +228,10 @@ func TestScrypted(t *testing.T) {
 			},
 		},
 		{
-			name:   "116",
-			value:  "AgEAAAACAQI=",
-			actual: &SupportedRTPConfiguration{},
+			name:    "116",
+			noequal: true,
+			value:   "AgEAAAACAQI=",
+			actual:  &SupportedRTPConfiguration{},
 			expect: &SupportedRTPConfiguration{
 				SRTPCryptoType: []byte{CryptoAES_CM_128_HMAC_SHA1_80, CryptoDisabled},
 			},

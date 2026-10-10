@@ -19,7 +19,7 @@ const (
 	QOS1      = 0x02
 )
 
-func (m *Message) WriteByte(b byte) {
+func (m *Message) writeByte(b byte) {
 	m.b = append(m.b, b)
 }
 
@@ -37,7 +37,7 @@ func (m *Message) WriteLen(i int) {
 		if i /= 128; i > 0 {
 			b |= 0x80
 		}
-		m.WriteByte(b)
+		m.writeByte(b)
 	}
 }
 
@@ -58,12 +58,12 @@ const (
 
 func NewConnect(clientID, username, password string) *Message {
 	m := &Message{}
-	m.WriteByte(CONNECT)
+	m.writeByte(CONNECT)
 	m.WriteLen(16 + len(clientID) + len(username) + len(password))
 
 	m.WriteString("MQTT")
-	m.WriteByte(4) // MQTT version
-	m.WriteByte(flagCleanStart | flagUsername | flagPassword)
+	m.writeByte(4) // MQTT version
+	m.writeByte(flagCleanStart | flagUsername | flagPassword)
 	m.WriteUint16(30) // keepalive
 
 	m.WriteString(clientID)
@@ -74,18 +74,18 @@ func NewConnect(clientID, username, password string) *Message {
 
 func NewSubscribe(mid uint16, topic string, qos byte) *Message {
 	m := &Message{}
-	m.WriteByte(SUBSCRIBE)
+	m.writeByte(SUBSCRIBE)
 	m.WriteLen(5 + len(topic))
 
 	m.WriteUint16(mid)
 	m.WriteString(topic)
-	m.WriteByte(qos)
+	m.writeByte(qos)
 	return m
 }
 
 func NewPublish(topic string, payload []byte) *Message {
 	m := &Message{}
-	m.WriteByte(PUBLISH)
+	m.writeByte(PUBLISH)
 	m.WriteLen(2 + len(topic) + len(payload))
 
 	m.WriteString(topic)
@@ -95,7 +95,7 @@ func NewPublish(topic string, payload []byte) *Message {
 
 func NewPublishQOS1(mid uint16, topic string, payload []byte) *Message {
 	m := &Message{}
-	m.WriteByte(PUBLISH | QOS1)
+	m.writeByte(PUBLISH | QOS1)
 	m.WriteLen(4 + len(topic) + len(payload))
 
 	m.WriteString(topic)
