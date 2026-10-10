@@ -45,11 +45,13 @@ RUN ./configure \
         --disable-opencl \
         --disable-asm && \
     make -j"$(getconf _NPROCESSORS_ONLN)" && \
-    make install
+    make install && \
+    test -s /opt/media/lib/libx264.a && \
+    PKG_CONFIG_PATH=/opt/media/lib/pkgconfig pkg-config --modversion x264
 
 COPY .build-sources/ffmpeg/ /tmp/ffmpeg/
 WORKDIR /tmp/ffmpeg
-RUN PKG_CONFIG_PATH=/opt/media/lib/pkgconfig ./configure \
+RUN if ! PKG_CONFIG_PATH=/opt/media/lib/pkgconfig ./configure \
         --prefix=/opt/media \
         --pkg-config-flags=--static \
         --extra-cflags=-I/opt/media/include \
@@ -65,9 +67,12 @@ RUN PKG_CONFIG_PATH=/opt/media/lib/pkgconfig ./configure \
         --enable-gpl \
         --enable-libx264 \
         --disable-shared \
-        --enable-static && \
-    make -j"$(getconf _NPROCESSORS_ONLN)" && \
-    make install && \
+        --enable-static; then \
+      cat ffbuild/config.log; \
+      exit 1; \
+    fi
+RUN make -j"$(getconf _NPROCESSORS_ONLN)"
+RUN make install && \
     strip /opt/media/bin/ffmpeg
 
 FROM ${RUNTIME_IMAGE} AS runtime
