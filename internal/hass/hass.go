@@ -10,12 +10,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/internal/roborock"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/hass"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/roborock"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/hass"
 	"github.com/rs/zerolog"
 )
 

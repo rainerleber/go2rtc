@@ -74,6 +74,10 @@ go vet ./...
 CGO_ENABLED=0 go build -buildvcs=false ./
 ```
 
+The fork uses the independent Go module path
+`github.com/rainerleber/go2rtc`. Links to `AlexxIT/go2rtc` identify the original
+project and historical upstream issues or releases.
+
 Container builds use [`docker/chainguard.Dockerfile`](docker/chainguard.Dockerfile).
 Upstream feature documentation is maintained in the
 [original go2rtc repository](https://github.com/AlexxIT/go2rtc).

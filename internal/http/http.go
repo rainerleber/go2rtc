@@ -7,15 +7,15 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/hls"
-	"github.com/AlexxIT/go2rtc/pkg/image"
-	"github.com/AlexxIT/go2rtc/pkg/magic"
-	"github.com/AlexxIT/go2rtc/pkg/mpjpeg"
-	"github.com/AlexxIT/go2rtc/pkg/pcm"
-	"github.com/AlexxIT/go2rtc/pkg/tcp"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/hls"
+	"github.com/rainerleber/go2rtc/pkg/image"
+	"github.com/rainerleber/go2rtc/pkg/magic"
+	"github.com/rainerleber/go2rtc/pkg/mpjpeg"
+	"github.com/rainerleber/go2rtc/pkg/pcm"
+	"github.com/rainerleber/go2rtc/pkg/tcp"
 )
 
 func Init() {

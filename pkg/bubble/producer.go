@@ -3,7 +3,7 @@ package bubble
 import (
 	"encoding/json"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 )
 
 func (c *Client) GetMedias() []*core.Media {

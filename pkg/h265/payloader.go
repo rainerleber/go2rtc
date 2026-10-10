@@ -4,7 +4,7 @@ import (
 	"encoding/binary"
 	"math"
 
-	"github.com/AlexxIT/go2rtc/pkg/h264"
+	"github.com/rainerleber/go2rtc/pkg/h264"
 )
 
 //

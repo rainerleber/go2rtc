@@ -3,10 +3,10 @@ package mpegts
 import (
 	"io"
 
-	"github.com/AlexxIT/go2rtc/pkg/aac"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/h264"
-	"github.com/AlexxIT/go2rtc/pkg/h265"
+	"github.com/rainerleber/go2rtc/pkg/aac"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/h264"
+	"github.com/rainerleber/go2rtc/pkg/h265"
 	"github.com/pion/rtp"
 )
 

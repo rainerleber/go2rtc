@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/dvrip"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/dvrip"
 )
 
 func Init() {

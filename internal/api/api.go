@@ -14,7 +14,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/app"
 	"github.com/rs/zerolog"
 )
 

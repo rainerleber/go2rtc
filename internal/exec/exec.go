@@ -15,14 +15,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/internal/rtsp"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/magic"
-	"github.com/AlexxIT/go2rtc/pkg/pcm"
-	pkg "github.com/AlexxIT/go2rtc/pkg/rtsp"
-	"github.com/AlexxIT/go2rtc/pkg/shell"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/rtsp"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/magic"
+	"github.com/rainerleber/go2rtc/pkg/pcm"
+	pkg "github.com/rainerleber/go2rtc/pkg/rtsp"
+	"github.com/rainerleber/go2rtc/pkg/shell"
 	"github.com/rs/zerolog"
 )
 

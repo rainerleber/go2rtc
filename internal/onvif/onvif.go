@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/internal/rtsp"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/onvif"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/rtsp"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/onvif"
 	"github.com/rs/zerolog"
 )
 

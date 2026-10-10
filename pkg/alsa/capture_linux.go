@@ -1,9 +1,9 @@
 package alsa
 
 import (
-	"github.com/AlexxIT/go2rtc/pkg/alsa/device"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/pcm"
+	"github.com/rainerleber/go2rtc/pkg/alsa/device"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/pcm"
 	"github.com/pion/rtp"
 )
 

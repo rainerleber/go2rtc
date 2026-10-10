@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/expr"
-	"github.com/AlexxIT/go2rtc/pkg/wav"
+	"github.com/rainerleber/go2rtc/pkg/expr"
+	"github.com/rainerleber/go2rtc/pkg/wav"
 )
 
 type env struct {
@@ -20,7 +20,7 @@ func (s *satellite) handleEvent(evt *Event) {
 	switch evt.Type {
 	case "describe":
 		// {"asr": [], "tts": [], "handle": [], "intent": [], "wake": [], "satellite": {"name": "my satellite", "attribution": {"name": "", "url": ""}, "installed": true, "description": "my satellite", "version": "1.4.1", "area": null, "snd_format": null}}
-		data := fmt.Sprintf(`{"satellite":{"name":%q,"attribution":{"name":"go2rtc","url":"https://github.com/AlexxIT/go2rtc"},"installed":true}}`, s.srv.Name)
+		data := fmt.Sprintf(`{"satellite":{"name":%q,"attribution":{"name":"go2rtc","url":"https://github.com/rainerleber/go2rtc"},"installed":true}}`, s.srv.Name)
 		s.WriteEvent("info", data)
 	case "run-satellite":
 		s.Detect()

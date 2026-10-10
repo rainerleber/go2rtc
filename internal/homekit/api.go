@@ -8,11 +8,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/hap"
-	"github.com/AlexxIT/go2rtc/pkg/mdns"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/hap"
+	"github.com/rainerleber/go2rtc/pkg/mdns"
 )
 
 func apiDiscovery(w http.ResponseWriter, r *http.Request) {

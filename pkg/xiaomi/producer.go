@@ -3,9 +3,9 @@ package xiaomi
 import (
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/xiaomi/legacy"
-	"github.com/AlexxIT/go2rtc/pkg/xiaomi/miss"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/xiaomi/legacy"
+	"github.com/rainerleber/go2rtc/pkg/xiaomi/miss"
 )
 
 func Dial(rawURL string) (core.Producer, error) {

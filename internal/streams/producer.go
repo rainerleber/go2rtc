@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 )
 
 type state byte

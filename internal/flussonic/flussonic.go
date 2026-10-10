@@ -1,8 +1,8 @@
 package flussonic
 
 import (
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/flussonic"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/flussonic"
 )
 
 func Init() {

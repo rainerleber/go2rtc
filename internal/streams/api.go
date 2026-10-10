@@ -3,11 +3,11 @@ package streams
 import (
 	"net/http"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/creds"
-	"github.com/AlexxIT/go2rtc/pkg/probe"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/creds"
+	"github.com/rainerleber/go2rtc/pkg/probe"
 )
 
 func apiStreams(w http.ResponseWriter, r *http.Request) {
@@ -68,7 +68,7 @@ func apiStreams(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// support {input} templates: https://github.com/AlexxIT/go2rtc#module-hass
+		// support {input} templates: https://github.com/rainerleber/go2rtc#module-hass
 		if _, err := Patch(name, src); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}

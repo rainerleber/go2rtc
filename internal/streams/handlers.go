@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 )
 
 type Handler func(source string) (core.Producer, error)

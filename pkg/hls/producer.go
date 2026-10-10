@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/url"
 
-	"github.com/AlexxIT/go2rtc/pkg/mpegts"
+	"github.com/rainerleber/go2rtc/pkg/mpegts"
 )
 
 func OpenURL(u *url.URL, body io.ReadCloser) (*mpegts.Producer, error) {

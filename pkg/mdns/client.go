@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/xnet"
+	"github.com/rainerleber/go2rtc/pkg/xnet"
 	"github.com/miekg/dns" // awesome library for parsing mDNS records
 )
 

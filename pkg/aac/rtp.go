@@ -3,7 +3,7 @@ package aac
 import (
 	"encoding/binary"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 	"github.com/pion/rtp"
 )
 
@@ -22,7 +22,7 @@ func RTPDepay(handler core.HandlerFunc) core.HandlerFunc {
 
 		if len(packet.Payload) < int(2+headersSize) {
 			// In very rare cases noname cameras may send data not according to the standard
-			// https://github.com/AlexxIT/go2rtc/issues/1328
+			// https://github.com/rainerleber/go2rtc/issues/1328
 			if IsADTS(packet.Payload) {
 				clone := *packet
 				clone.Version = RTPPacketVersionAAC

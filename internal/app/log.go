@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/AlexxIT/go2rtc/pkg/creds"
+	"github.com/rainerleber/go2rtc/pkg/creds"
 	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog"
 )

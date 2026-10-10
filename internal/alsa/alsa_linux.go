@@ -9,10 +9,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/alsa"
-	"github.com/AlexxIT/go2rtc/pkg/alsa/device"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/alsa"
+	"github.com/rainerleber/go2rtc/pkg/alsa/device"
 )
 
 func Init() {

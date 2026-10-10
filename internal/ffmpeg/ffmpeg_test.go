@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexxIT/go2rtc/pkg/ffmpeg"
+	"github.com/rainerleber/go2rtc/pkg/ffmpeg"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +41,7 @@ func TestParseArgsFile(t *testing.T) {
 			expect: `ffmpeg -hide_banner -re -i /media/bbb.mp4 -c:v mjpeg -an -f mjpeg -`,
 		},
 		{
-			name:   "https://github.com/AlexxIT/go2rtc/issues/509",
+			name:   "https://github.com/rainerleber/go2rtc/issues/509",
 			source: "ffmpeg:test.mp4#raw=-ss 00:00:20",
 			expect: `ffmpeg -hide_banner -re -i ffmpeg:test.mp4 -ss 00:00:20 -c copy -user_agent ffmpeg/go2rtc -rtsp_transport tcp -f rtsp {output}`,
 		},

@@ -3,8 +3,8 @@ package app
 import (
 	"sync"
 
-	"github.com/AlexxIT/go2rtc/pkg/creds"
-	"github.com/AlexxIT/go2rtc/pkg/yaml"
+	"github.com/rainerleber/go2rtc/pkg/creds"
+	"github.com/rainerleber/go2rtc/pkg/yaml"
 )
 
 func initStorage() {

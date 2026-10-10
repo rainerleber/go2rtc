@@ -10,10 +10,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/hap"
-	"github.com/AlexxIT/go2rtc/pkg/hap/chacha20poly1305"
-	"github.com/AlexxIT/go2rtc/pkg/hap/hkdf"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/hap"
+	"github.com/rainerleber/go2rtc/pkg/hap/chacha20poly1305"
+	"github.com/rainerleber/go2rtc/pkg/hap/hkdf"
 )
 
 func NewConn(conn net.Conn, key []byte, salt string, controller bool) (*Conn, error) {

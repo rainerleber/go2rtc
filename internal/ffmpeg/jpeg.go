@@ -6,10 +6,10 @@ import (
 	"net/url"
 	"os/exec"
 
-	"github.com/AlexxIT/go2rtc/internal/ffmpeg/hardware"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/ffmpeg"
-	"github.com/AlexxIT/go2rtc/pkg/shell"
+	"github.com/rainerleber/go2rtc/internal/ffmpeg/hardware"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/ffmpeg"
+	"github.com/rainerleber/go2rtc/pkg/shell"
 )
 
 func JPEGWithQuery(b []byte, query url.Values) ([]byte, error) {

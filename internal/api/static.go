@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/AlexxIT/go2rtc/www"
+	"github.com/rainerleber/go2rtc/www"
 )
 
 func initStatic(staticDir string) {

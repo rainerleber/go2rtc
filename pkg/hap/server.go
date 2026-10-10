@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/AlexxIT/go2rtc/pkg/hap/chacha20poly1305"
-	"github.com/AlexxIT/go2rtc/pkg/hap/curve25519"
-	"github.com/AlexxIT/go2rtc/pkg/hap/ed25519"
-	"github.com/AlexxIT/go2rtc/pkg/hap/hkdf"
-	"github.com/AlexxIT/go2rtc/pkg/hap/tlv8"
+	"github.com/rainerleber/go2rtc/pkg/hap/chacha20poly1305"
+	"github.com/rainerleber/go2rtc/pkg/hap/curve25519"
+	"github.com/rainerleber/go2rtc/pkg/hap/ed25519"
+	"github.com/rainerleber/go2rtc/pkg/hap/hkdf"
+	"github.com/rainerleber/go2rtc/pkg/hap/tlv8"
 	"github.com/tadglines/go-pkgs/crypto/srp"
 )
 

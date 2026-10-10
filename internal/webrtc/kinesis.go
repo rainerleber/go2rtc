@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/webrtc"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/webrtc"
 	"github.com/gorilla/websocket"
 	pion "github.com/pion/webrtc/v4"
 )

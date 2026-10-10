@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
 

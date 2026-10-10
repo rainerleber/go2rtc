@@ -4,15 +4,15 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/app"
-	"github.com/AlexxIT/go2rtc/internal/ffmpeg/device"
-	"github.com/AlexxIT/go2rtc/internal/ffmpeg/hardware"
-	"github.com/AlexxIT/go2rtc/internal/ffmpeg/virtual"
-	"github.com/AlexxIT/go2rtc/internal/rtsp"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/ffmpeg"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/app"
+	"github.com/rainerleber/go2rtc/internal/ffmpeg/device"
+	"github.com/rainerleber/go2rtc/internal/ffmpeg/hardware"
+	"github.com/rainerleber/go2rtc/internal/ffmpeg/virtual"
+	"github.com/rainerleber/go2rtc/internal/rtsp"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/ffmpeg"
 	"github.com/rs/zerolog"
 )
 
@@ -128,7 +128,7 @@ var defaults = map[string]string{
 	"h265/v4l2m2m": "-c:v hevc_v4l2m2m -g 50 -bf 0",
 
 	// hardware Rockchip
-	// important to use custom ffmpeg https://github.com/AlexxIT/go2rtc/issues/768
+	// important to use custom ffmpeg https://github.com/rainerleber/go2rtc/issues/768
 	// hevc - doesn't have a profile setting
 	"h264/rkmpp":  "-c:v h264_rkmpp -g 50 -bf 0 -profile:v high -level:v 4.1",
 	"h265/rkmpp":  "-c:v hevc_rkmpp -g 50 -bf 0 -profile:v main -level:v 5.1",
@@ -262,7 +262,7 @@ func parseArgs(s string) *ffmpeg.Args {
 	if query != nil {
 		// 1. Process raw params for FFmpeg
 		for _, raw := range query["raw"] {
-			// support templates https://github.com/AlexxIT/go2rtc/issues/487
+			// support templates https://github.com/rainerleber/go2rtc/issues/487
 			raw = configTemplate(raw)
 			args.AddCodec(raw)
 		}
@@ -300,7 +300,7 @@ func parseArgs(s string) *ffmpeg.Args {
 		}
 
 		for _, drawtext := range query["drawtext"] {
-			// support templates https://github.com/AlexxIT/go2rtc/issues/487
+			// support templates https://github.com/rainerleber/go2rtc/issues/487
 			drawtext = configTemplate(drawtext)
 
 			// support default timestamp format

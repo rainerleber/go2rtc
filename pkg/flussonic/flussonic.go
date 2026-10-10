@@ -3,10 +3,10 @@ package flussonic
 import (
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/aac"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/h264"
-	"github.com/AlexxIT/go2rtc/pkg/iso"
+	"github.com/rainerleber/go2rtc/pkg/aac"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/h264"
+	"github.com/rainerleber/go2rtc/pkg/iso"
 	"github.com/gorilla/websocket"
 	"github.com/pion/rtp"
 )

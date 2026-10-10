@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/webrtc"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/webrtc"
 	"github.com/pion/sdp/v3"
 )
 
-// https://github.com/AlexxIT/go2rtc/issues/1600
+// https://github.com/rainerleber/go2rtc/issues/1600
 func crealityClient(url string) (core.Producer, error) {
 	pc, err := PeerConnection(true)
 	if err != nil {

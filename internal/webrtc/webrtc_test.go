@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AlexxIT/go2rtc/internal/api/ws"
+	"github.com/rainerleber/go2rtc/internal/api/ws"
 	pion "github.com/pion/webrtc/v4"
 	"github.com/stretchr/testify/require"
 )

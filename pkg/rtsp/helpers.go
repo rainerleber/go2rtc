@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/core"
 	"github.com/pion/rtcp"
 	"github.com/pion/sdp/v3"
 )
@@ -30,7 +30,7 @@ func UnmarshalSDP(rawSDP []byte) ([]*core.Media, error) {
 		// fix multiple `s=` https://github.com/AlexxIT/WebRTC/issues/417
 		rawSDP = regexp.MustCompile("\ns=[^\n]+").ReplaceAll(rawSDP, nil)
 
-		// fix broken `c=` https://github.com/AlexxIT/go2rtc/issues/1426
+		// fix broken `c=` https://github.com/rainerleber/go2rtc/issues/1426
 		rawSDP = regexp.MustCompile("\nc=[^\n]+").ReplaceAll(rawSDP, nil)
 
 		// fix SDP header for some cameras
@@ -59,7 +59,7 @@ func UnmarshalSDP(rawSDP []byte) ([]*core.Media, error) {
 		}
 	}
 
-	// fix buggy camera https://github.com/AlexxIT/go2rtc/issues/771
+	// fix buggy camera https://github.com/rainerleber/go2rtc/issues/771
 	forceDirection := sd.Origin.Username == "CV-RTSPHandler"
 
 	var medias []*core.Media
@@ -78,7 +78,7 @@ func UnmarshalSDP(rawSDP []byte) ([]*core.Media, error) {
 			case core.CodecH265:
 				if codec.FmtpLine != "" {
 					// all three parameters are needed for a valid fmtp line
-					// https://github.com/AlexxIT/go2rtc/pull/1588
+					// https://github.com/rainerleber/go2rtc/pull/1588
 					if !strings.Contains(codec.FmtpLine, "sprop-vps=") ||
 						!strings.Contains(codec.FmtpLine, "sprop-sps=") ||
 						!strings.Contains(codec.FmtpLine, "sprop-pps=") {
@@ -118,12 +118,12 @@ func findFmtpLine(payloadType uint8, descriptions []*sdp.MediaDescription) strin
 // 2. Content-Base: rtsp://rtsp://turret2-cam.lan:554/stream1/
 // 3. Content-Base: 192.168.253.220:1935/
 func urlParse(rawURL string) (*url.URL, error) {
-	// fix https://github.com/AlexxIT/go2rtc/issues/830
+	// fix https://github.com/rainerleber/go2rtc/issues/830
 	if strings.HasPrefix(rawURL, "rtsp://rtsp://") {
 		rawURL = rawURL[7:]
 	}
 
-	// fix https://github.com/AlexxIT/go2rtc/issues/1852
+	// fix https://github.com/rainerleber/go2rtc/issues/1852
 	if !strings.Contains(rawURL, "://") {
 		rawURL = "rtsp://" + rawURL
 	}

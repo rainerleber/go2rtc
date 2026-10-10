@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/tcp"
+	"github.com/rainerleber/go2rtc/pkg/tcp"
 )
 
 func Dial(address string) (net.Conn, error) {
@@ -18,7 +18,7 @@ func Dial(address string) (net.Conn, error) {
 	}
 
 	// using custom client for support Digest Auth
-	// https://github.com/AlexxIT/go2rtc/issues/415
+	// https://github.com/rainerleber/go2rtc/issues/415
 	ctx, pconn := tcp.WithConn()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", address, nil)

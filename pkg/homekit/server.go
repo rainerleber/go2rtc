@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/pkg/hap"
-	"github.com/AlexxIT/go2rtc/pkg/hap/tlv8"
+	"github.com/rainerleber/go2rtc/pkg/hap"
+	"github.com/rainerleber/go2rtc/pkg/hap/tlv8"
 )
 
 type HandlerFunc func(net.Conn) error

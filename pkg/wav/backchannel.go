@@ -1,8 +1,8 @@
 package wav
 
 import (
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/shell"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/shell"
 	"github.com/pion/rtp"
 )
 

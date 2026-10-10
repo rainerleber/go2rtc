@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/AlexxIT/go2rtc/pkg/tutk"
-	"github.com/AlexxIT/go2rtc/pkg/xiaomi/crypto"
+	"github.com/rainerleber/go2rtc/pkg/tutk"
+	"github.com/rainerleber/go2rtc/pkg/xiaomi/crypto"
 )
 
 func NewClient(rawURL string) (*Client, error) {

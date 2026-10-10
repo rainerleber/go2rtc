@@ -9,11 +9,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AlexxIT/go2rtc/internal/api"
-	"github.com/AlexxIT/go2rtc/internal/streams"
-	"github.com/AlexxIT/go2rtc/pkg/core"
-	"github.com/AlexxIT/go2rtc/pkg/v4l2"
-	"github.com/AlexxIT/go2rtc/pkg/v4l2/device"
+	"github.com/rainerleber/go2rtc/internal/api"
+	"github.com/rainerleber/go2rtc/internal/streams"
+	"github.com/rainerleber/go2rtc/pkg/core"
+	"github.com/rainerleber/go2rtc/pkg/v4l2"
+	"github.com/rainerleber/go2rtc/pkg/v4l2/device"
 )
 
 func Init() {
