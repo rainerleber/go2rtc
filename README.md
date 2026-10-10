@@ -35,8 +35,10 @@ The build pipeline:
 
 - resolves the public Chainguard Go and Wolfi Base images to immutable digests;
 - verifies their keyless Sigstore signatures before building;
-- runs the RTSP and FFmpeg proxy package tests with upstream's Go version;
+- vets the RTSP and FFmpeg proxy packages with upstream's Go version;
 - installs Wolfi's FFmpeg 9 package and checks libx264/AAC encoder availability;
+- smoke-tests the exact 4:3 H.264 scale/pad filter and AAC transcoding used by
+  the Reolink-to-Alexa stream;
 - publishes `amd64` and `arm64` images to
   `ghcr.io/rainerleber/go2rtc-chainguard`;
 - attaches an SBOM and build provenance and signs the resulting manifest with
