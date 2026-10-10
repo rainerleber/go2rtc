@@ -1,8 +1,7 @@
-# go2rtc Hummingbird
+# go2rtc Chainguard
 
 This Home Assistant app runs the fork's independently built go2rtc image. It
-uses signed Project Hummingbird / Red Hat Hardened Images as its build and
-runtime foundation.
+uses signed Chainguard Go and Wolfi images as its build and runtime foundation.
 
 The app is intentionally minimal: it receives only its own app configuration
 directory at `/config` and uses host networking for local RTSP access. It does

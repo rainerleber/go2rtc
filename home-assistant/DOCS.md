@@ -1,4 +1,4 @@
-# Home Assistant app: go2rtc Hummingbird
+# Home Assistant app: go2rtc Chainguard
 
 ## Installation
 
@@ -8,7 +8,7 @@ Add this repository to **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Hummingbird**, but do not start it before creating the
+Install **go2rtc Chainguard**, but do not start it before creating the
 configuration described below.
 
 ## Configuration
@@ -56,8 +56,8 @@ Expose only that Generic Camera entity to Alexa.
 - Use a dedicated camera account with live-view permission only.
 - Keep API and RTSP listeners on `127.0.0.1`; do not forward their ports.
 - The image runs without privileged mode and has no host filesystem access.
-- The runtime contains only go2rtc and the source-built FFmpeg binary; it does
-  not include Python, a shell, FFplay, FFprobe, or hardware acceleration.
+- The runtime contains go2rtc and Wolfi's FFmpeg 9 package. It does not include
+  Python or hardware acceleration; Wolfi Base does include BusyBox and APK.
 - Camera URLs contain credentials. Treat `go2rtc.yaml` and app logs as secrets.
 - go2rtc deliberately supports FFmpeg and external command execution. Do not
   expose its API to untrusted networks and do not paste untrusted configuration.

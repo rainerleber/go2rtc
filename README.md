@@ -28,18 +28,16 @@ This fork publishes a small, independent Home Assistant app and container image
 for users who do not want to trust or install the complete upstream app
 catalog. The application source remains the upstream go2rtc source; the
 container is rebuilt in this repository on signed
-[Project Hummingbird / Red Hat Hardened Images](https://hummingbird-project.io/)
+[Chainguard Images](https://images.chainguard.dev/)
 instead of consuming the upstream go2rtc container.
 
 The build pipeline:
 
-- resolves the Hummingbird build and runtime images to immutable digests;
-- verifies their Red Hat signatures before building;
-- downloads FFmpeg 9.0.2 and x264 stable from their original projects, verifies
-  fixed SHA-256 checksums, builds them from source, and checks H.264/AAC encoder
-  availability;
+- resolves the public Chainguard Go and Wolfi Base images to immutable digests;
+- verifies their keyless Sigstore signatures before building;
+- installs Wolfi's FFmpeg 9 package and checks libx264/AAC encoder availability;
 - publishes `amd64` and `arm64` images to
-  `ghcr.io/rainerleber/go2rtc-hummingbird`;
+  `ghcr.io/rainerleber/go2rtc-chainguard`;
 - attaches an SBOM and build provenance and signs the resulting manifest with
   GitHub OIDC; and
 - rebuilds every Monday so base-image security updates are consumed even when
@@ -49,10 +47,9 @@ The workflow and all third-party GitHub Actions are pinned to commit hashes.
 Published app versions use immutable `YYYY.MM.DD.RUN` tags; `latest` is provided
 for standalone testing only.
 
-The go2rtc program remains MIT-licensed. Because this image links FFmpeg with
-x264, the distributed media binary is GPL-2.0-or-later. Exact source versions
-and checksums are reviewable in
-[`docker/fetch-media-sources.sh`](docker/fetch-media-sources.sh).
+The go2rtc program remains MIT-licensed. Wolfi's FFmpeg package includes x264,
+so the distributed media components are GPL-2.0-or-later. Their exact package
+versions and dependencies are recorded in the generated image SBOM.
 
 ### Home Assistant installation
 
@@ -62,15 +59,14 @@ Add only this repository to the Home Assistant App Store:
 https://github.com/rainerleber/go2rtc
 ```
 
-Then install **go2rtc Hummingbird**. Its documentation and the secure,
+Then install **go2rtc Chainguard**. Its documentation and the secure,
 loopback-only Reolink/Alexa example are in
 [`home-assistant/DOCS.md`](home-assistant/DOCS.md).
 
-This image deliberately supports only `amd64` and `arm64`, the architectures
-published by Hummingbird. It is not a byte-for-byte copy of the upstream Alpine
-image. The minimal runtime contains go2rtc and FFmpeg, but no Python interpreter,
-interactive shell, FFplay, FFprobe, hardware-acceleration drivers, or device
-integration. The container retains go2rtc's FFmpeg execution feature, so its
+This image deliberately supports only `amd64` and `arm64`. It is not a
+byte-for-byte copy of the upstream Alpine image. The runtime contains go2rtc,
+Wolfi FFmpeg, BusyBox, and APK, but no Python interpreter or hardware-
+acceleration drivers. The container retains go2rtc's FFmpeg execution feature, so its
 API must not be exposed to an untrusted network. The Home Assistant app receives
 host networking and its own configuration directory, but no Supervisor token,
 Home Assistant configuration mount, device access, or privileged mode.

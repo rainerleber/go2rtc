@@ -1,8 +1,8 @@
 # https://developers.home-assistant.io/docs/apps/configuration
-name: go2rtc Hummingbird
+name: go2rtc Chainguard
 version: "2026.10.10.0"
-slug: go2rtc_hummingbird
-description: Locally rebuilt go2rtc proxy based on signed Hummingbird images
+slug: go2rtc_chainguard
+description: Locally rebuilt go2rtc proxy based on signed Chainguard images
 url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
 arch:
   - amd64
@@ -15,4 +15,4 @@ map:
     read_only: false
 options: {}
 schema: false
-image: "ghcr.io/rainerleber/go2rtc-hummingbird"
+image: "ghcr.io/rainerleber/go2rtc-chainguard"
