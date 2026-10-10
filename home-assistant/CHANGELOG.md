@@ -2,7 +2,8 @@
 
 ## Next
 
-- Generate the proxy configuration from private app options.
+- Accept the complete YAML as an app option and keep the camera password in a
+  separate masked `password` field referenced as `${CAMERA_PASSWORD}`.
 - Keep access limited to the app-specific configuration directory; no Home
   Assistant configuration mount or Supervisor API token is granted.
 

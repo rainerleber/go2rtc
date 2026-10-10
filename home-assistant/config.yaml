@@ -14,11 +14,9 @@ map:
   - type: addon_config
     read_only: false
 options:
-  camera_host: ""
-  camera_username: ""
+  config: ""
   camera_password: ""
 schema:
-  camera_host: str
-  camera_username: str
+  config: str
   camera_password: password
 image: "ghcr.io/rainerleber/go2rtc-chainguard"

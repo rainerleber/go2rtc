@@ -13,10 +13,11 @@ configuration described below.
 
 ## Configuration
 
-Set `camera_host`, `camera_username`, and `camera_password` in the app's
-Configuration tab. On first start the app writes `go2rtc.yaml` with mode 0600
-inside its private `/config` directory. Use a dedicated Reolink account that
-has live-view permission only.
+Set the complete YAML in `config` and the secret separately in the masked
+`camera_password` field. The YAML must use `${CAMERA_PASSWORD}` at the password
+position. On every start the app writes `go2rtc.yaml` with mode 0600 inside its
+private `/config` directory. Use a dedicated Reolink account that has live-view
+permission only.
 
 This example binds every server to loopback and disables WebRTC because the
 Alexa proxy only needs local RTSP. Replace the placeholders locally:
@@ -36,7 +37,7 @@ webrtc:
 
 streams:
   reolink_haustuer:
-    - rtsp://VIEW_ONLY_USER:PASSWORD@CAMERA_ADDRESS:554/h264Preview_01_sub
+    - rtsp://VIEW_ONLY_USER:${CAMERA_PASSWORD}@CAMERA_ADDRESS:554/h264Preview_01_sub
 
   reolink_haustuer_alexa:
     - >-
