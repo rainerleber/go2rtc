@@ -1,5 +1,10 @@
 # Changelog
 
+## Next
+
+- Import existing Reolink integrations from Home Assistant's read-only
+  configuration mount, avoiding duplicated camera credentials in go2rtc.
+
 ## 2026.10.10.0
 
 - Initial Home Assistant app metadata for the Chainguard/Wolfi-based image.

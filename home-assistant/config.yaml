@@ -13,6 +13,8 @@ host_network: true
 map:
   - type: addon_config
     read_only: false
+  - type: homeassistant_config
+    read_only: true
 options: {}
 schema: false
 image: "ghcr.io/rainerleber/go2rtc-chainguard"
