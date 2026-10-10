@@ -10,6 +10,7 @@ on:
     paths:
       - ".github/workflows/hummingbird-image.yml"
       - "docker/hummingbird.Dockerfile"
+      - "docker/fetch-media-sources.sh"
       - "go.mod"
       - "go.sum"
       - "**/*.go"
@@ -20,14 +21,12 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: write
-  packages: write
-  id-token: write
-  attestations: write
+  contents: read
 
 env:
   GO_BUILDER_IMAGE: registry.access.redhat.com/hi/go:1.25-builder
-  RUNTIME_IMAGE: registry.access.redhat.com/hi/python:3.13-builder
+  MEDIA_BUILDER_IMAGE: registry.access.redhat.com/hi/core-runtime:latest-builder
+  RUNTIME_IMAGE: registry.access.redhat.com/hi/core-runtime:latest
   REGISTRY_IMAGE: ghcr.io/rainerleber/go2rtc-hummingbird
 
 jobs:
@@ -36,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       go_builder: ${{ steps.bases.outputs.go_builder }}
+      media_builder: ${{ steps.bases.outputs.media_builder }}
       runtime: ${{ steps.bases.outputs.runtime }}
       version: ${{ steps.version.outputs.version }}
     steps:
@@ -64,18 +64,24 @@ jobs:
           }
 
           go_builder="$(resolve "$GO_BUILDER_IMAGE")"
+          media_builder="$(resolve "$MEDIA_BUILDER_IMAGE")"
           runtime="$(resolve "$RUNTIME_IMAGE")"
 
           cosign verify --key "$key_url" --insecure-ignore-tlog "$go_builder"
+          cosign verify --key "$key_url" --insecure-ignore-tlog "$media_builder"
           cosign verify --key "$key_url" --insecure-ignore-tlog "$runtime"
 
           echo "go_builder=$go_builder" >> "$GITHUB_OUTPUT"
+          echo "media_builder=$media_builder" >> "$GITHUB_OUTPUT"
           echo "runtime=$runtime" >> "$GITHUB_OUTPUT"
 
       - name: Calculate immutable app version
         id: version
         shell: bash
         run: echo "version=$(date -u +'%Y.%m.%d').${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch and verify FFmpeg and x264 sources
+        run: ./docker/fetch-media-sources.sh
 
       - name: Build amd64 validation image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
@@ -88,6 +94,7 @@ jobs:
           tags: go2rtc-hummingbird:test
           build-args: |
             GO_BUILDER_IMAGE=${{ steps.bases.outputs.go_builder }}
+            MEDIA_BUILDER_IMAGE=${{ steps.bases.outputs.media_builder }}
             RUNTIME_IMAGE=${{ steps.bases.outputs.runtime }}
             BUILD_VERSION=${{ steps.version.outputs.version }}
           cache-from: type=gha,scope=hummingbird-amd64
@@ -98,9 +105,9 @@ jobs:
         run: |
           set -euo pipefail
           docker run --rm go2rtc-hummingbird:test -version
-          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -version
-          encoders="$(docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -encoders 2>/dev/null)"
-          grep -Eq 'libx264|libopenh264|h264_vaapi|h264_v4l2m2m' <<< "$encoders"
+          docker run --rm --entrypoint /usr/local/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -version
+          encoders="$(docker run --rm --entrypoint /usr/local/bin/ffmpeg go2rtc-hummingbird:test -hide_banner -encoders 2>/dev/null)"
+          grep -Eq 'libx264' <<< "$encoders"
           grep -Eq ' aac ' <<< "$encoders"
 
   publish:
@@ -110,6 +117,11 @@ jobs:
       github.ref == 'refs/heads/master' &&
       (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+      attestations: write
     steps:
       - name: Check out source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -129,6 +141,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Fetch and verify FFmpeg and x264 sources
+        run: ./docker/fetch-media-sources.sh
+
       - name: Build and publish
         id: build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
@@ -142,6 +157,7 @@ jobs:
             ${{ env.REGISTRY_IMAGE }}:latest
           build-args: |
             GO_BUILDER_IMAGE=${{ needs.validate.outputs.go_builder }}
+            MEDIA_BUILDER_IMAGE=${{ needs.validate.outputs.media_builder }}
             RUNTIME_IMAGE=${{ needs.validate.outputs.runtime }}
             BUILD_VERSION=${{ needs.validate.outputs.version }}
           labels: |

@@ -35,7 +35,9 @@ The build pipeline:
 
 - resolves the Hummingbird build and runtime images to immutable digests;
 - verifies their Red Hat signatures before building;
-- runs the Go test suite and checks FFmpeg H.264/AAC encoder availability;
+- downloads FFmpeg 9.0.2 and x264 stable from their original projects, verifies
+  fixed SHA-256 checksums, builds them from source, and checks H.264/AAC encoder
+  availability;
 - publishes `amd64` and `arm64` images to
   `ghcr.io/rainerleber/go2rtc-hummingbird`;
 - attaches an SBOM and build provenance and signs the resulting manifest with
@@ -46,6 +48,11 @@ The build pipeline:
 The workflow and all third-party GitHub Actions are pinned to commit hashes.
 Published app versions use immutable `YYYY.MM.DD.RUN` tags; `latest` is provided
 for standalone testing only.
+
+The go2rtc program remains MIT-licensed. Because this image links FFmpeg with
+x264, the distributed media binary is GPL-2.0-or-later. Exact source versions
+and checksums are reviewable in
+[`docker/fetch-media-sources.sh`](docker/fetch-media-sources.sh).
 
 ### Home Assistant installation
 
@@ -61,7 +68,9 @@ loopback-only Reolink/Alexa example are in
 
 This image deliberately supports only `amd64` and `arm64`, the architectures
 published by Hummingbird. It is not a byte-for-byte copy of the upstream Alpine
-image. The container retains go2rtc's FFmpeg/command execution features, so its
+image. The minimal runtime contains go2rtc and FFmpeg, but no Python interpreter,
+interactive shell, FFplay, FFprobe, hardware-acceleration drivers, or device
+integration. The container retains go2rtc's FFmpeg execution feature, so its
 API must not be exposed to an untrusted network. The Home Assistant app receives
 host networking and its own configuration directory, but no Supervisor token,
 Home Assistant configuration mount, device access, or privileged mode.
