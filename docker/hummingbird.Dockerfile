@@ -19,9 +19,11 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 COPY . .
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
-    go test ./... && \
+    CGO_ENABLED=0 go test ./...
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -buildvcs=true -ldflags "-s -w" -trimpath -o /out/go2rtc .
+    go build -buildvcs=false -ldflags "-s -w" -trimpath -o /out/go2rtc .
 
 FROM ${MEDIA_BUILDER_IMAGE} AS media-build
 
