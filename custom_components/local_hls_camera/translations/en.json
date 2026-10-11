@@ -3,24 +3,35 @@
   "config": {
     "step": {
       "user": {
-        "title": "Add a compatibility camera",
-        "description": "Select an existing camera with a local RTSP source. Its credentials and encoding remain in the source app. This creates a separate H.264/AAC MPEG-TS HLS camera, without modifying the source camera.",
-        "data": {"name": "Name", "source_entity_id": "Source camera"}
+        "title": "Add an app camera",
+        "description": "Enter the go2rtc app's output_name. The app supplies MPEG-TS HLS and snapshots; camera credentials and media settings stay in the app. No Generic Camera is needed.",
+        "data": {
+          "name": "Name",
+          "stream_name": "App output stream name"
+        }
       }
     },
     "error": {
-      "invalid_source": "Select an existing RTSP camera, not another Local HLS Camera.",
-      "source_unavailable": "The source camera is unavailable or has no readable stream source."
+      "app_unavailable": "The go2rtc app's HLS API v1 is unavailable or this output name is not configured.",
+      "already_configured": "This output stream is already configured."
     },
-    "abort": {"already_configured": "This source camera is already configured."}
+    "abort": {
+      "already_configured": "This output stream is already configured."
+    }
   },
   "options": {
     "step": {
       "init": {
-        "title": "HLS packaging",
-        "description": "These settings only change packaging, not encoding. Use short keyframes in the source app. Preload is controlled by Home Assistant's standard camera stream setting.",
-        "data": {"segment_seconds": "Target segment duration (seconds)", "segment_count": "Retained segments"}
+        "title": "App camera bridge",
+        "description": "Select the app output. Encoding, HLS segment settings and warm buffering are configured in the app, not here. HA's standard preload setting can also keep this output warm.",
+        "data": {
+          "stream_name": "App output stream name"
+        }
       }
+    },
+    "error": {
+      "app_unavailable": "The app's HLS API v1 is unavailable for this output.",
+      "already_configured": "This output stream is already configured."
     }
   }
 }

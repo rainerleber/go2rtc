@@ -1,90 +1,83 @@
-"""UI setup without copied credentials or user-supplied executable arguments."""
+"""UI setup points to a named app output, never a camera URL or credential."""
 
-import asyncio
 from urllib.parse import urlsplit
 
 import probatio as vol
-from homeassistant.components.camera import async_get_stream_source
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
-from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import entity_registry as er
-from homeassistant.helpers import selector
 
-from .const import (
-    CONF_SEGMENT_COUNT,
-    CONF_SEGMENT_SECONDS,
-    CONF_SOURCE_ENTITY,
-    DEFAULT_SEGMENT_COUNT,
-    DEFAULT_SEGMENT_SECONDS,
-    DOMAIN,
-)
+from .backend import STREAM_NAME, BackendClient, BackendError
+from .const import CONF_STREAM_NAME, DEFAULT_STREAM_NAME, DOMAIN
 
 
-def source_is_rtsp(source: str | None) -> bool:
-    """Reject file, HTTP, exec and other protocols; never return the URL in errors."""
-    if not source or any(ord(char) < 32 for char in source):
-        return False
+def legacy_stream_name(source: str | None) -> str | None:
+    """Migrate only the app's exact loopback RTSP output, without copied secrets."""
+    if (
+        not isinstance(source, str)
+        or not source
+        or any(ord(char) < 32 for char in source)
+    ):
+        return None
     try:
         parsed = urlsplit(source)
-        return parsed.scheme in ("rtsp", "rtsps") and bool(parsed.hostname)
+        name = parsed.path.removeprefix("/")
+        if (
+            parsed.scheme == "rtsp"
+            and parsed.hostname == "127.0.0.1"
+            and parsed.port == 8554
+            and parsed.username is None
+            and parsed.password is None
+            and not parsed.query
+            and not parsed.fragment
+            and STREAM_NAME.fullmatch(name)
+        ):
+            return name
     except ValueError:
-        return False
+        pass
+    return None
 
 
-def options_schema(values: dict) -> vol.Schema:
-    return vol.Schema(
-        {
-            vol.Required(
-                CONF_SEGMENT_SECONDS,
-                default=values.get(CONF_SEGMENT_SECONDS, DEFAULT_SEGMENT_SECONDS),
-            ): vol.All(vol.Coerce(int), vol.Range(min=1, max=3)),
-            vol.Required(
-                CONF_SEGMENT_COUNT,
-                default=values.get(CONF_SEGMENT_COUNT, DEFAULT_SEGMENT_COUNT),
-            ): vol.All(vol.Coerce(int), vol.Range(min=3, max=10)),
-        }
-    )
+def stream_schema(values: dict, *, name: bool = False) -> vol.Schema:
+    fields = {
+        vol.Required(
+            CONF_STREAM_NAME, default=values.get(CONF_STREAM_NAME, DEFAULT_STREAM_NAME)
+        ): vol.All(str, vol.Match(r"^[A-Za-z0-9_-]{1,64}$"))
+    }
+    if name:
+        fields[vol.Required(CONF_NAME, default="Local HLS Camera")] = str
+    return vol.Schema(fields)
+
+
+async def validate_stream(hass, stream_name: str) -> str | None:
+    try:
+        await BackendClient(hass, stream_name).status()
+    except BackendError:
+        return "app_unavailable"
+    return None
 
 
 class LocalHlsConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Create one independent HLS camera for an existing RTSP camera."""
+    """One HA camera bridge per named app output."""
 
-    VERSION = 1
+    VERSION = 2
 
     async def async_step_user(self, user_input=None):
         errors = {}
         if user_input is not None:
-            entity_id = user_input[CONF_SOURCE_ENTITY]
-            registered = er.async_get(self.hass).async_get(entity_id)
-            if registered is not None and registered.platform == DOMAIN:
-                errors[CONF_SOURCE_ENTITY] = "invalid_source"
+            error = await validate_stream(self.hass, user_input[CONF_STREAM_NAME])
+            if error:
+                errors[CONF_STREAM_NAME] = error
             else:
-                try:
-                    async with asyncio.timeout(5):
-                        source = await async_get_stream_source(self.hass, entity_id)
-                    if not source_is_rtsp(source):
-                        errors[CONF_SOURCE_ENTITY] = "invalid_source"
-                except HomeAssistantError, TimeoutError:
-                    errors[CONF_SOURCE_ENTITY] = "source_unavailable"
-            if not errors:
-                await self.async_set_unique_id(entity_id)
+                await self.async_set_unique_id(f"go2rtc:{user_input[CONF_STREAM_NAME]}")
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title=user_input[CONF_NAME],
-                    data={CONF_SOURCE_ENTITY: entity_id},
+                    data={CONF_STREAM_NAME: user_input[CONF_STREAM_NAME]},
                 )
         return self.async_show_form(
             step_id="user",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_NAME, default="Local HLS Camera"): str,
-                    vol.Required(CONF_SOURCE_ENTITY): selector.EntitySelector(
-                        selector.EntitySelectorConfig(domain="camera")
-                    ),
-                }
-            ),
+            data_schema=stream_schema(user_input or {}, name=True),
             errors=errors,
         )
 
@@ -95,11 +88,41 @@ class LocalHlsConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class LocalHlsOptionsFlow(OptionsFlow):
-    """Only packaging settings; encoding stays in the source app."""
+    """Packaging and encoding settings belong exclusively to the app."""
 
     async def async_step_init(self, user_input=None):
+        errors = {}
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            error = await validate_stream(self.hass, user_input[CONF_STREAM_NAME])
+            if error:
+                errors[CONF_STREAM_NAME] = error
+            else:
+                other = next(
+                    (
+                        entry
+                        for entry in self.hass.config_entries.async_entries(DOMAIN)
+                        if entry.entry_id != self.config_entry.entry_id
+                        and entry.options.get(
+                            CONF_STREAM_NAME, entry.data.get(CONF_STREAM_NAME)
+                        )
+                        == user_input[CONF_STREAM_NAME]
+                    ),
+                    None,
+                )
+                if other:
+                    errors[CONF_STREAM_NAME] = "already_configured"
+                else:
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry,
+                        data={CONF_STREAM_NAME: user_input[CONF_STREAM_NAME]},
+                        unique_id=f"go2rtc:{user_input[CONF_STREAM_NAME]}",
+                    )
+                    return self.async_create_entry(title="", data={})
         return self.async_show_form(
-            step_id="init", data_schema=options_schema(dict(self.config_entry.options))
+            step_id="init",
+            errors=errors,
+            data_schema=stream_schema(
+                user_input
+                or dict(self.config_entry.data) | dict(self.config_entry.options)
+            ),
         )

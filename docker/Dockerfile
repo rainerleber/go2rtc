@@ -37,7 +37,7 @@ RUN apk add --no-cache ffmpeg-9.0
 COPY --from=build /out/go2rtc /usr/local/bin/go2rtc
 
 LABEL org.opencontainers.image.title="go2rtc" \
-      org.opencontainers.image.description="Local RTSP camera proxy with optional H.264/AAC compatibility output" \
+      org.opencontainers.image.description="Local camera media backend with H.264/AAC, MPEG-TS HLS and snapshots" \
       org.opencontainers.image.source="https://github.com/rainerleber/go2rtc" \
       org.opencontainers.image.licenses="MIT AND GPL-2.0-or-later" \
       org.opencontainers.image.version="${BUILD_VERSION}" \

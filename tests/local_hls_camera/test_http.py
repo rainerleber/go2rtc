@@ -11,19 +11,16 @@ from homeassistant.components.http.const import KEY_HASS_USER
 
 from custom_components.local_hls_camera.const import DOMAIN, MAX_SESSIONS
 from custom_components.local_hls_camera.http import HlsView
-from custom_components.local_hls_camera.media import MediaInfo
 from custom_components.local_hls_camera.stream import StreamAdapter
 
 
 @pytest.fixture
-def adapter(hass):
+def adapter(hass, backend):
     value = StreamAdapter(
-        hass, "entry", "camera.source", 1, 6, SimpleNamespace(preload_stream=False)
+        hass, "entry", "synthetic", SimpleNamespace(preload_stream=False)
     )
     value.entity_id = "camera.test"
-    value.ring.append(
-        b"synthetic-transport-data", 1, False, MediaInfo(320, 180, "avc1.4d401f")
-    )
+    value.backend = backend
     hass.data[DOMAIN] = {"entry": value}
     return value
 
@@ -71,7 +68,7 @@ async def test_all_playlist_and_segment_urls_are_signed(client, adapter):
 async def test_expired_session_and_removed_camera(client, adapter):
     url = adapter.endpoint_url("hls")
     session = next(iter(adapter.sessions))
-    adapter.sessions[session] = time.monotonic() - 1
+    adapter.sessions[session].expires = time.monotonic() - 1
     assert (await client.get(url)).status == 410
     adapter.hass.data[DOMAIN].clear()
     assert (await client.get(url)).status == 404
@@ -111,7 +108,8 @@ async def test_bounded_sessions_and_stop_revokes_urls(adapter):
         adapter.add_provider("recorder")
     await adapter.stop()
     assert not adapter.sessions
-    assert adapter.ring.bytes == 0
+    assert not adapter._status
+    adapter.backend.start.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -130,30 +128,31 @@ async def _return(value):
 
 
 @pytest.mark.asyncio
-async def test_backpressure_does_not_queue_unlimited_segments(adapter):
-    adapter._quit.set()
-    await adapter._publish(b"ignored", 1, False, MediaInfo(320, 180, "avc1.4d401f"))
-    assert len(adapter.ring.segments) == 1
+async def test_app_restart_revokes_old_session_urls(client, adapter):
+    url = adapter.endpoint_url("hls")
+    assert (await client.get(url)).status == 200
+    adapter.backend.test_status["generation"] = "b" * 32
+    assert (await client.get(url)).status == 410
+    assert (await client.get(adapter.endpoint_url("hls"))).status == 200
 
 
 @pytest.mark.asyncio
 async def test_startup_timeout(adapter):
-    adapter.ring.clear()
+    adapter.backend.test_status["ready"] = False
     with patch("custom_components.local_hls_camera.stream.STARTUP_SECONDS", 0.01):
         with pytest.raises(asyncio.TimeoutError):
             await adapter.wait_ready()
 
 
 @pytest.mark.asyncio
-async def test_snapshot_reuses_source_camera(adapter):
-    with patch(
-        "custom_components.local_hls_camera.stream.async_get_image",
-        return_value=SimpleNamespace(content=b"synthetic-snapshot"),
-    ) as snapshot:
-        assert (
-            await adapter.async_get_image(width=320, height=180)
-            == b"synthetic-snapshot"
-        )
-    snapshot.assert_awaited_once_with(
-        adapter.hass, "camera.source", width=320, height=180
-    )
+async def test_idle_camera_stays_available_for_native_cold_start(adapter):
+    adapter.backend.test_status.update(ready=False, running=False)
+    await adapter.refresh()
+    assert adapter.available
+    assert adapter.last_error == "stream_not_ready"
+
+
+@pytest.mark.asyncio
+async def test_snapshot_comes_from_app_without_generic_camera(adapter):
+    assert await adapter.async_get_image(width=320, height=180) == b"synthetic-snapshot"
+    adapter.backend.request.assert_awaited_once_with("snapshot.jpg")

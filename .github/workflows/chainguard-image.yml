@@ -57,6 +57,9 @@ jobs:
           CGO_ENABLED: "0"
         run: go vet ./...
 
+      - name: Race-test private media lifecycle and buffers
+        run: go test -race ./internal/hls ./internal/hassaddon
+
       - name: Verify module files are tidy
         run: |
           go mod tidy

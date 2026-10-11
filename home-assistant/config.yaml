@@ -2,7 +2,7 @@
 name: go2rtc
 version: "2026.10.28"
 slug: go2rtc_chainguard
-description: Local RTSP camera proxy with optional H.264/AAC compatibility output
+description: Local camera media backend with H.264/AAC, MPEG-TS HLS and snapshots
 url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
 arch:
   - amd64
@@ -30,6 +30,8 @@ options:
   video_fps: 15
   keyframe_seconds: 1
   video_bitrate_kbps: 1500
+  hls_segment_seconds: 1
+  hls_segment_count: 6
 schema:
   camera_address: str
   camera_username: str
@@ -45,6 +47,8 @@ schema:
   video_fps: int(1,30)?
   keyframe_seconds: int(1,5)?
   video_bitrate_kbps: int(128,8000)?
+  hls_segment_seconds: int(1,3)?
+  hls_segment_count: int(3,10)?
   # Retained only for automatic migration of existing installations.
   camera_stream: list(main|sub|ext)?
 image: "ghcr.io/rainerleber/go2rtc-chainguard"

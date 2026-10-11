@@ -9,8 +9,8 @@ from homeassistant.components.http.const import KEY_HASS_USER
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
+from .backend import SEGMENT_NAME, BackendError, GenerationExpired, MediaNotFound
 from .const import DOMAIN
-from .media import MediaError
 
 
 class HlsView(HomeAssistantView):
@@ -42,36 +42,26 @@ class HlsView(HomeAssistantView):
             raise web.HTTPForbidden
         if not adapter.valid_session(session_id):
             raise web.HTTPGone
-        adapter.touch()
         headers = {"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"}
         try:
             if filename in ("master.m3u8", "stream.m3u8"):
-                await adapter.wait_ready()
-                if filename == "master.m3u8":
-                    body = adapter.ring.master(
-                        adapter.signed_url(session_id, "stream.m3u8")
-                    )
-                else:
-                    body = adapter.ring.playlist(
-                        lambda sequence: adapter.signed_url(
-                            session_id, f"segment-{sequence}.ts"
-                        )
-                    )
+                body = await adapter.media(session_id, filename)
                 return web.Response(
                     text=body,
                     content_type="application/vnd.apple.mpegurl",
                     headers=headers,
                 )
-            match = re.fullmatch(r"segment-([0-9]{1,20})\.ts", filename)
-            if match is None:
+            if SEGMENT_NAME.fullmatch(filename) is None:
                 raise web.HTTPNotFound
-            segment = adapter.ring.get(int(match[1]))
-            if segment is None:
-                raise web.HTTPNotFound
+            segment = await adapter.media(session_id, filename)
             return web.Response(
-                body=segment.data, content_type="video/mp2t", headers=headers
+                body=segment, content_type="video/mp2t", headers=headers
             )
-        except TimeoutError, MediaError:
+        except GenerationExpired:
+            raise web.HTTPGone from None
+        except MediaNotFound:
+            raise web.HTTPNotFound from None
+        except TimeoutError, BackendError:
             raise web.HTTPServiceUnavailable(headers={"Retry-After": "1"}) from None
         except HomeAssistantError:
             raise web.HTTPGone from None

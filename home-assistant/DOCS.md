@@ -12,7 +12,9 @@ an audio-only output. A source with no audio remains video-only; silence is not 
 No raw shell/FFmpeg settings, cloud camera account, or browser workaround is needed.
 This fork is limited to the Home Assistant app. It does not include the
 upstream web UI, WebRTC, HomeKit, cloud providers or tunnel modules.
-Home Assistant receives RTSP and produces its own HLS output for Alexa.
+The app packages prepared RTSP into MPEG-TS HLS in RAM and creates JPEG previews.
+The small Local HLS Camera integration supplies an entity and signed HA HTTPS
+routes for native Alexa. No intermediate Generic Camera or second encoder is needed.
 No file from the removed upstream `www` directory is needed for this path.
 
 The compatibility output defaults to 1280x720 at 15 fps, 1500 kbit/s and one
@@ -20,14 +22,14 @@ keyframe per second. Short keyframe spacing reduces the wait for a decodable
 frame and HLS segment boundaries. A `superfast`, `zerolatency` encoder with no
 B-frames avoids frame reordering. Local FFmpeg input probing is bounded to
 250 ms / 256 KiB. These settings improve startup but cannot eliminate Echo
-Show, network, or Home Assistant HLS buffering.
+Show, network, app HLS buffering or player startup delays.
 
 The H.264 level is selected from the output geometry and frame rate: Level 3.1
 for at most 3600 macroblocks / 108000 macroblocks per second (including 720p30),
 otherwise Level 4.0 (up to the supported 1080p30). This avoids unnecessarily
 requiring a Level 4.1 decoder. Dimensions are rounded up to 16x16 macroblocks.
 
-With `preload: true`, the output remains connected even with no viewers.
+With `preload: true`, the output and HLS buffer stay warm even with no viewers.
 This consumes continuous camera bandwidth and, when transcoding, CPU.
 Unavailable sources retry independently after 1, 2, 4, 8, 16, then 30 seconds
 (maximum); an offline camera at boot no longer permanently disables preloading.
@@ -55,13 +57,15 @@ the app. Changes take effect on the next app restart.
 | `camera_password` | empty | Masked password; requires a username when nonempty. |
 | `source_name` | empty → camera | Original local stream name. Letters, digits, underscore/hyphen, maximum 64 characters. |
 | `output_name` | empty → camera_compatible | Output stream name; must differ from source name. |
-| `output_mode` | h264_aac | Normalize to H.264/AAC. `passthrough` relays unchanged and does not launch FFmpeg. |
+| `output_mode` | h264_aac | Normalize to H.264/AAC. `passthrough` avoids encoding; HLS still uses FFmpeg for packet-copy packaging. |
 | `preload` | true | Keep output warm; false saves resources but increases cold-start latency. |
 | `video_width` | 1280 | Even output width, 160–1920 pixels. |
 | `video_height` | 720 | Even output height, 120–1080 pixels. |
 | `video_fps` | 15 | Output frame rate, 1–30 fps. |
 | `keyframe_seconds` | 1 | Keyframe interval, 1–5 seconds. GOP = fps × interval. |
 | `video_bitrate_kbps` | 1500 | Target/maximum video bitrate, 128–8000 kbit/s; one-second encoder buffer. |
+| `hls_segment_seconds` | 1 | HLS target seconds, 1–3; use keyframe spacing no longer than this. |
+| `hls_segment_count` | 6 | Live playlist window, 3–10; removed segments stay available temporarily within the RAM cap. |
 | `camera_stream` | legacy only | Old Reolink main/sub/ext selection, used only when camera_path is absent/empty. |
 
 Video settings apply only to `h264_aac`. Passthrough cannot repair incompatible
@@ -85,17 +89,17 @@ Do not rename stream names without updating their Home Assistant camera URLs.
 
 ## Home Assistant and Alexa
 
-Create/configure a **Generic Camera** in Settings → Devices & services with:
+Install [Local HLS Camera through HACS](../custom_components/local_hls_camera/README.md),
+then add the integration using the app's `output_name` (default `camera_compatible`).
+No stream URL, password, extra HA login or Generic Camera is needed. Expose only
+the bridge camera to Alexa and use its voice name. App preload warms all media;
+HA's normal camera preload preference can send keepalives too. Keep the original
+camera for recording: the bridge is playback-only.
 
-```text
-rtsp://127.0.0.1:8554/camera_compatible
-```
-
-Use your chosen output_name instead of camera_compatible, RTSP transport TCP,
-and no camera username/password on this loopback connection. In that camera
-entity's settings enable **Preload stream** as well. The app keeps RTSP/FFmpeg
-warm; Home Assistant's separate preference keeps the HLS producer warm.
-Expose only this Generic Camera entity to Alexa and use its Alexa name.
+Upgrade the app **before** integration 2026.10.3. Existing entries migrate only
+when their source is the app's loopback RTSP output and HLS settings match the
+app. Entity/config-entry IDs and names are preserved. No camera/integration is
+deleted automatically; see the bridge guide for verification and rollback.
 
 For the current HA Alexa HLS descriptor, 1280x720 H.264/AAC matches the advertised
 format. Compatibility is not a guarantee that every Echo firmware will play it;
@@ -164,8 +168,8 @@ encoding as well as HLS syntax. Older GStreamer clients can disable gzip
 decoding by default ([upstream source](https://github.com/GStreamer/gst-plugins-good/blob/1.4.5/ext/soup/gstsouphttpsrc.c)).
 A server that forces gzip can therefore be incompatible. This is a diagnostic
 hypothesis until a controlled test confirms it on the actual Echo; a User-Agent
-alone does not prove its full decoder configuration. HA owns these HTTP
-responses, so this app's RTSP/FFmpeg settings cannot change their compression.
+alone does not prove its full decoder configuration. The thin bridge serves
+uncompressed playlists/segments without altering Core or other camera routes.
 
 Successful segment downloads still do not prove playback. HA's fMP4 output
 requires a separate initialization section, referenced by `EXT-X-MAP` (see
@@ -175,6 +179,7 @@ If it downloads segments but never their initialization, investigate HLS
 container/client compatibility before changing credentials or encoder settings.
 The installed HA stream implementation still uses fMP4 when LL-HLS is disabled;
 turning off LL-HLS alone does not produce legacy MPEG-TS segments.
+The app HLS backend explicitly uses MPEG-TS without a separate init section.
 Any HA-side compatibility experiment should be backed up, tested on the actual
 device and rolled back if it does not fix playback. This app does not patch HA Core.
 

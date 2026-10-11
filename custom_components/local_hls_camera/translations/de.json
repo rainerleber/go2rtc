@@ -3,24 +3,35 @@
   "config": {
     "step": {
       "user": {
-        "title": "Kompatibilitätskamera hinzufügen",
-        "description": "Wähle eine vorhandene Kamera mit lokalem RTSP-Stream. Zugangsdaten und Kodierung bleiben in der Quell-App. Es entsteht eine separate H.264/AAC-Kamera mit MPEG-TS-HLS; die Quellkamera wird nicht verändert.",
-        "data": {"name": "Name", "source_entity_id": "Quellkamera"}
+        "title": "App-Kamera hinzufügen",
+        "description": "Gib den Ausgabestream-Namen (output_name) der go2rtc-App ein. Die App liefert MPEG-TS-HLS und Vorschaubilder; Zugangsdaten und Medieneinstellungen bleiben dort. Eine Generic-Kamera ist nicht nötig.",
+        "data": {
+          "name": "Name",
+          "stream_name": "Ausgabestream-Name der App"
+        }
       }
     },
     "error": {
-      "invalid_source": "Wähle eine vorhandene RTSP-Kamera, keine andere Local HLS Camera.",
-      "source_unavailable": "Die Quellkamera ist nicht verfügbar oder liefert keine lesbare Stream-Adresse."
+      "app_unavailable": "Die HLS-API v1 der go2rtc-App ist nicht erreichbar oder dieser Ausgabestream ist nicht konfiguriert.",
+      "already_configured": "Dieser Ausgabestream ist bereits eingerichtet."
     },
-    "abort": {"already_configured": "Diese Quellkamera ist bereits eingerichtet."}
+    "abort": {
+      "already_configured": "Dieser Ausgabestream ist bereits eingerichtet."
+    }
   },
   "options": {
     "step": {
       "init": {
-        "title": "HLS-Verpackung",
-        "description": "Diese Einstellungen verändern nur die Verpackung, nicht die Kodierung. Stelle kurze Keyframe-Abstände in der Quell-App ein. Vorladen wird über die normale HA-Einstellung der Kamera gesteuert.",
-        "data": {"segment_seconds": "Ziel-Segmentdauer (Sekunden)", "segment_count": "Vorgehaltene Segmente"}
+        "title": "App-Kamerabrücke",
+        "description": "Wähle die App-Ausgabe. Encoder, HLS-Segmente und warmer Puffer werden in der App eingestellt. Die normale HA-Option zum Vorladen kann diesen Stream ebenfalls warm halten.",
+        "data": {
+          "stream_name": "Ausgabestream-Name der App"
+        }
       }
+    },
+    "error": {
+      "app_unavailable": "Die HLS-API v1 der App ist für diese Ausgabe nicht erreichbar.",
+      "already_configured": "Dieser Ausgabestream ist bereits eingerichtet."
     }
   }
 }

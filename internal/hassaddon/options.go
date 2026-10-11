@@ -19,21 +19,23 @@ const (
 
 // Structured RTSP options deliberately exclude executable URLs and raw FFmpeg arguments.
 type options struct {
-	CameraAddress  string `json:"camera_address"`
-	CameraPort     int    `json:"camera_port"`
-	CameraPath     string `json:"camera_path"`
-	CameraUsername string `json:"camera_username"`
-	CameraPassword string `json:"camera_password"`
-	SourceName     string `json:"source_name"`
-	OutputName     string `json:"output_name"`
-	OutputMode     string `json:"output_mode"`
-	Preload        *bool  `json:"preload"`
-	VideoWidth     int    `json:"video_width"`
-	VideoHeight    int    `json:"video_height"`
-	VideoFPS       int    `json:"video_fps"`
-	KeyframeSecs   int    `json:"keyframe_seconds"`
-	VideoBitrate   int    `json:"video_bitrate_kbps"`
-	CameraStream   string `json:"camera_stream"` // legacy migration only
+	CameraAddress     string `json:"camera_address"`
+	CameraPort        int    `json:"camera_port"`
+	CameraPath        string `json:"camera_path"`
+	CameraUsername    string `json:"camera_username"`
+	CameraPassword    string `json:"camera_password"`
+	SourceName        string `json:"source_name"`
+	OutputName        string `json:"output_name"`
+	OutputMode        string `json:"output_mode"`
+	Preload           *bool  `json:"preload"`
+	VideoWidth        int    `json:"video_width"`
+	VideoHeight       int    `json:"video_height"`
+	VideoFPS          int    `json:"video_fps"`
+	KeyframeSecs      int    `json:"keyframe_seconds"`
+	VideoBitrate      int    `json:"video_bitrate_kbps"`
+	HLSSegmentSeconds int    `json:"hls_segment_seconds"`
+	HLSSegmentCount   int    `json:"hls_segment_count"`
+	CameraStream      string `json:"camera_stream"` // legacy migration only
 }
 
 var streamName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
@@ -94,6 +96,7 @@ func buildConfig(b []byte) ([]byte, error) {
 		stream = "ffmpeg:" + o.SourceName + "#input=app_rtsp#video=h264#audio=aac#raw=app_scale"
 	}
 	config["streams"] = map[string][]string{o.SourceName: {u.String()}, o.OutputName: {stream}}
+	config["hls"] = map[string]any{"stream": o.OutputName, "segment_seconds": o.HLSSegmentSeconds, "segment_count": o.HLSSegmentCount, "preload": o.Preload == nil || *o.Preload}
 	if o.Preload == nil || *o.Preload {
 		config["preload"] = map[string]string{o.OutputName: "video&audio"}
 	}
@@ -160,6 +163,12 @@ func (o *options) defaults() error {
 	if o.VideoBitrate == 0 {
 		o.VideoBitrate = 1500
 	}
+	if o.HLSSegmentSeconds == 0 {
+		o.HLSSegmentSeconds = 1
+	}
+	if o.HLSSegmentCount == 0 {
+		o.HLSSegmentCount = 6
+	}
 	return nil
 }
 func (o options) validate() error {
@@ -188,6 +197,9 @@ func (o options) validate() error {
 	}
 	if o.VideoFPS < 1 || o.VideoFPS > 30 || o.KeyframeSecs < 1 || o.KeyframeSecs > 5 || o.VideoBitrate < 128 || o.VideoBitrate > 8000 {
 		return errors.New("video_fps, keyframe_seconds or video_bitrate_kbps is outside its supported range")
+	}
+	if o.HLSSegmentSeconds < 1 || o.HLSSegmentSeconds > 3 || o.HLSSegmentCount < 3 || o.HLSSegmentCount > 10 {
+		return errors.New("HLS segment settings are outside their supported range")
 	}
 	return nil
 }

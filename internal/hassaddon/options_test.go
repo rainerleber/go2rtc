@@ -15,6 +15,12 @@ type generated struct {
 	FFmpeg  map[string]string   `json:"ffmpeg"`
 	RTSP    map[string]string   `json:"rtsp"`
 	API     map[string]string   `json:"api"`
+	HLS     struct {
+		Stream         string `json:"stream"`
+		SegmentSeconds int    `json:"segment_seconds"`
+		SegmentCount   int    `json:"segment_count"`
+		Preload        bool   `json:"preload"`
+	} `json:"hls"`
 }
 
 func generate(t *testing.T, input string) generated {
@@ -39,6 +45,9 @@ func TestBuildConfigLegacyMigration(t *testing.T) {
 	}
 	if c.Preload["reolink_haustuer_alexa"] != "video&audio" {
 		t.Fatal("preload missing")
+	}
+	if c.HLS.Stream != "reolink_haustuer_alexa" || c.HLS.SegmentSeconds != 1 || c.HLS.SegmentCount != 6 || !c.HLS.Preload {
+		t.Fatal("HLS migration defaults changed")
 	}
 	if c.API["listen"] != "127.0.0.1:1984" || c.RTSP["listen"] != "127.0.0.1:8554" {
 		t.Fatal("listener isolation changed")
@@ -118,6 +127,21 @@ func TestBuildConfigPassthrough(t *testing.T) {
 	c := generate(t, `{"camera_address":"camera.test","camera_path":"/live","output_mode":"passthrough","preload":false}`)
 	if len(c.FFmpeg) != 0 || len(c.Preload) != 0 || c.Streams["camera_compatible"][0] != "rtsp://127.0.0.1:8554/camera" {
 		t.Fatal("passthrough must avoid encoder and share local source")
+	}
+	if c.HLS.Preload {
+		t.Fatal("idle HLS must not stay preloaded")
+	}
+}
+
+func TestHLSOptions(t *testing.T) {
+	c := generate(t, `{"camera_address":"camera.test","camera_path":"/live","hls_segment_seconds":2,"hls_segment_count":8}`)
+	if c.HLS.SegmentSeconds != 2 || c.HLS.SegmentCount != 8 {
+		t.Fatal("HLS options ignored")
+	}
+	for _, input := range []string{`{"camera_address":"camera.test","camera_path":"/live","hls_segment_seconds":4}`, `{"camera_address":"camera.test","camera_path":"/live","hls_segment_count":2}`} {
+		if _, err := buildConfig([]byte(input)); err == nil {
+			t.Fatal("invalid HLS options accepted")
+		}
 	}
 }
 func TestBuildConfigRejectsInvalidOptions(t *testing.T) {

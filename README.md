@@ -10,16 +10,18 @@ control names, resolution, frame rate, bitrate and keyframe spacing. Scaling
 preserves the source aspect ratio, including portrait doorbells. No Reolink
 cloud or browser workaround is required. This fork targets the Home Assistant
 app only: it retains the local RTSP, FFmpeg and preload pipeline, not upstream
-web pages, WebRTC, HomeKit, cloud providers or tunnel modules. Home Assistant
-creates the camera entity and supplies HLS to Alexa; the app does not serve HLS.
+web pages, WebRTC, HomeKit, cloud providers or tunnel modules. The app owns
+encoding, MPEG-TS HLS, bounded RAM buffering, reconnection and JPEG snapshots.
+Home Assistant owns the entity, permissions, signed HTTPS routes and native Alexa.
 
-For an optional legacy MPEG-TS HLS compatibility camera, see
-[`Local HLS Camera`](custom_components/local_hls_camera/README.md). This separately
-installed Home Assistant integration leaves the app and Core code unchanged.
-It was verified with a live picture on an Echo Show 15 (first generation) on
-2026-10-11 with Home Assistant 2026.10.1. This is a device-specific result, not
-a guarantee for every Echo or camera. HACS installs the integration directly
-from this repository; the container app remains the RTSP/encoding backend.
+For native Alexa playback, install the small
+[`Local HLS Camera` bridge](custom_components/local_hls_camera/README.md) through
+HACS. It forwards app media through HA's authenticated server, without encoding,
+demuxing, a segment ring, Core patches or additional app permissions.
+No intermediate Generic Camera is needed. The preceding HA-owned remuxer
+produced a confirmed Echo Show 15 live picture on 2026-10-11. The new app-owned
+backend is covered by synthetic end-to-end tests; actual Echo playback must
+still be verified after installation. Neither guarantees every Echo/camera.
 
 ## Install in Home Assistant
 
@@ -52,8 +54,8 @@ and release workflow. It:
 - verifies both base-image Sigstore signatures before use;
 - runs the complete Go test suite, `go vet`, and a clean production build;
 - installs Wolfi's APK-signed FFmpeg 9 package;
-- verifies `libx264` and AAC and performs real H.264 scale/pad and AAC
-  transcodes matching the Alexa stream;
+- verifies `libx264` and AAC and performs real H.264 scale/pad, AAC,
+  RAM-only MPEG-TS HLS and snapshot tests matching the Alexa stream;
 - publishes `amd64` and `arm64` images with immutable `YYYY.MM.BUILD` CalVer tags;
 - emits an SBOM and provenance and keylessly signs the resulting manifest; and
 - rebuilds every Monday at 03:17 UTC to consume current base-image security fixes.

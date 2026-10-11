@@ -25,7 +25,7 @@ configuration:
     description: "h264_aac normalisiert das Video; passthrough verwendet keinen Encoder und behält die Codecs bei."
   preload:
     name: "Stream warm halten"
-    description: "Dauerhafte Kameraverbindung und Encoder-CPU-Nutzung; verkürzt den Kaltstart."
+    description: "Hält Kameraverbindung, Encoder und HLS-Puffer warm; verkürzt den Kaltstart. Dauerhafte CPU-/Netzlast."
   video_width:
     name: "Ausgabebreite"
     description: "Gerade Pixelzahl. Skalierung erhält das Seitenverhältnis und ergänzt schwarze Ränder."
@@ -41,6 +41,12 @@ configuration:
   video_bitrate_kbps:
     name: "Video-Bitrate"
     description: "Ziel-/Maximalwert in kbit/s, 128–8000. Nur für normalisierte Ausgabe."
+  hls_segment_seconds:
+    name: "HLS-Segmentdauer"
+    description: "Zieldauer in Sekunden, 1–3. Schlüsselbildabstand möglichst nicht länger einstellen. Eine Sekunde ist für Alexa empfohlen."
+  hls_segment_count:
+    name: "HLS-Livefenster"
+    description: "Segmente in der Live-Playlist, 3–10. Standard 6; bereits veröffentlichte Segmente bleiben zeitweise zusätzlich im begrenzten RAM-Puffer."
   camera_stream:
     name: "Alter Reolink-Quellstream"
     description: "Nur zur Migration. Wird bei explizitem RTSP-Pfad ignoriert."

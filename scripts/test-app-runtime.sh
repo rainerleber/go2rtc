@@ -35,7 +35,7 @@ for shape in landscape wide portrait; do
       "$image" -config /source.json >/dev/null
   fi
   await_status active
-  # HA owns HLS and the user interface; upstream web and streaming endpoints
+  # HA owns public routes and the user interface; upstream web/stream endpoints
   # must not accidentally reappear in this HA-only binary.
   for path in / /index.html /config.html /api/webrtc /api/stream.m3u8; do
     status="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:1984$path")"
@@ -52,5 +52,6 @@ for shape in landscape wide portrait; do
     --entrypoint /usr/bin/ffprobe "$image" -v error -show_streams -show_frames \
     -of json "/results/$shape.mkv" > "$task_dir/results/$shape.json"
   python3 scripts/verify-app-media.py "$task_dir/results/$shape.json"
+  python3 scripts/verify-app-hls.py "$image"
   docker rm -f "$app_name" >/dev/null
 done

@@ -3,7 +3,7 @@
 import shutil
 import socket
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from homeassistant import loader
@@ -49,13 +49,24 @@ async def test_real_ha_config_flow_platform_and_unload(tmp_path):
             DOMAIN, context={"source": "user"}
         )
         assert flow["type"] == "form"
-        result = await hass.config_entries.flow.async_configure(
-            flow["flow_id"],
-            {
-                "name": "Compatibility Test",
-                "source_entity_id": "camera.synthetic_source",
-            },
-        )
+        status = {
+            "api_version": 1,
+            "ready": True,
+            "generation": "a" * 32,
+            "running": True,
+            "segment_seconds": 1,
+            "segment_count": 6,
+            "buffer_segments": 6,
+            "buffer_bytes": 1000,
+        }
+        with patch(
+            "custom_components.local_hls_camera.backend.BackendClient.status",
+            AsyncMock(return_value=status),
+        ):
+            result = await hass.config_entries.flow.async_configure(
+                flow["flow_id"],
+                {"name": "Compatibility Test", "stream_name": "synthetic"},
+            )
         assert result["type"] == "create_entry"
         await hass.async_block_till_done()
         entry = result["result"]

@@ -1,249 +1,171 @@
-# Local HLS Camera (optional Home Assistant integration)
+# Local HLS Camera: thin Home Assistant bridge
 
-This integration creates a **separate compatibility camera** from an existing
-Home Assistant RTSP camera. It leaves the go2rtc app, HA Core, the original camera,
-and its consumers unchanged. It is not a browser workaround or a second app.
+The **go2rtc app owns media**: local RTSP camera access, optional H.264/AAC
+encoding, MPEG-TS HLS packaging, bounded RAM buffering, reconnects and JPEG
+previews. This integration creates a HA camera, checks read access, signs every
+media URL and forwards the app's media through HA's existing server.
+It has no PyAV remuxer, media worker thread, segment ring or second encoder.
 
 ```text
-Local camera → existing go2rtc app → local RTSP → Local HLS Camera
-             → HA HTTPS / existing Nabu Casa remote access → Alexa / Echo
+Local camera → go2rtc app (H.264/AAC, RAM-only MPEG-TS HLS, JPEG)
+             → thin HA camera (permissions, signed HTTPS routes)
+             → existing HA Cloud / native Alexa → Echo Show
 ```
 
-## Status and limitations
+No Generic Camera, extra app, browser workaround, Reolink cloud, new user,
+additional password, Supervisor/HA token or Core patch is required. Native
+Alexa still uses Amazon and the existing HA Cloud connection; it is not fully
+cloud-free. Keep the original camera for recording.
 
-The first supported/tested baseline is **Home Assistant 2026.10.1, PyAV 19**.
-On **2026-10-11**, a user confirmed a real live picture on an **Echo Show 15
-(first generation)** through native Alexa, using a local RTSP input with
-H.264/AAC, 1280×720, 15 fps and a one-second GOP. No gong was triggered for
-that test. This is **not a confirmed fix for every Echo** or a long-term
-stability guarantee.
-The native HA Alexa handler still requests HLS. The camera implements a narrow
-adapter for HA's **internal** `async_create_stream()` contract; it does not patch
-HA's camera helpers, Alexa handler, Stream worker, provider registry or gzip code.
-HA updates preserve the integration's files but can change that internal API.
+## Install from GitHub
 
-No Reolink cloud is used. Native Alexa and existing Nabu Casa still involve
-Amazon/HA Cloud; this is not a completely cloud-free Alexa solution.
+1. Add `https://github.com/rainerleber/go2rtc` to the App store. Install **go2rtc**,
+   configure its camera and enable `preload` for fast playback.
+2. In HACS Custom repositories, add `rainerleber/go2rtc`, category **Integration**.
+   Download **Local HLS Camera** from `master`. HACS installs only the custom
+   component; the App store downloads the image built by GitHub Actions.
+   Do not upload a local uncommitted worktree to production.
+3. Restart HA Core to load changed Python modules. A config-entry reload does
+   not reliably replace cached code.
+4. Add **Local HLS Camera** under Devices & services. Enter its camera name
+   and the app's `output_name`, default `camera_compatible`.
+5. Expose only this camera to Alexa. Verify a real Echo picture without gong.
 
-## Why the container app is still needed
+The integration accepts a stream **name**, not a URL/address/password. Its
+options change that output. Encoding, HLS duration/count and boot-time warmup
+belong to the app. HA's normal camera preload preference can send keepalives;
+app preload warms media even before HA has loaded.
 
-The two components have different jobs:
+Baseline: **HA 2026.10.1**. The adapter uses HA's **internal**
+`async_create_stream()` contract, not a stable public HLS-provider API.
+No global camera helper, Alexa handler, stream worker, provider registry or
+compression implementation is replaced. Baseline/latest-HA CI guards that contract.
 
-- **go2rtc app:** obtains local camera media and, when needed,
-  produces a warm H.264/AAC RTSP compatibility stream with suitable keyframes.
-- **Local HLS Camera integration:** copies that stream into self-contained
-  MPEG-TS HLS segments and serves them through HA's authenticated HTTP routes.
-- **HACS:** downloads and tracks the integration code; it does not process media.
+## Migration from 2026.10.1 / 2026.10.2
 
-Keep the app for this verified setup. It is only optional if another existing
-HA camera already supplies a compatible RTSP stream. The integration itself
-does not transcode, add AAC or repair a long input keyframe interval.
+Take a **usable HA backup** including HA configuration, integration files and
+the App/data; keep restore credentials/emergency kit available.
 
-## Installation from GitHub through HACS
+1. Record the old integration's segment duration/count and source camera.
+2. **Update the app first**, and match `hls_segment_seconds` / `hls_segment_count`
+   to those old values (defaults 1 / 6). Wait for HLS API v1 readiness.
+3. Update the integration through HACS and restart Core. Migration accepts only
+   `rtsp://127.0.0.1:8554/<output_name>` without credentials/query. A Generic
+   source need not be loaded: its config entry can be read through HA in RAM.
+4. Migration keeps entry ID, camera unique ID, entity ID, name, exposure and
+   preload preference. It replaces the source reference with the output name;
+   no credential is copied and no other camera/integration is removed.
+5. Check diagnostics, snapshot, signed media access, actual Echo playback
+   **without gong**, and unchanged doorbell/recording automation configuration.
+6. Only then check **all consumers** of the obsolete Generic source and remove
+   that exact Generic integration through HA with operator approval and a
+   usable backup. Never remove the original recording camera.
 
-HACS must already be installed and configured. No upstream app catalog or new
-service credentials are needed.
+An unavailable/old app, non-app source or mismatched HLS settings stops migration
+without modifying the entry. Fix the app/settings, then retry. There are no
+`.storage` edits, Core modifications or automatic registry deletions.
 
-1. Open **HACS → menu → Custom repositories**.
-2. Add **`rainerleber/go2rtc`**, category **Integration**.
-3. Open **Local HLS Camera**, download the **default branch (`master`)**.
-   HACS obtains the files from GitHub and installs only
-   `custom_components/local_hls_camera`. The app is installed separately from
-   the HA App store using the same repository URL.
-4. Restart HA once for a first installation, then follow **Camera setup** below.
+## Media and resources
 
-The HA manifest uses its own `YYYY.MM.BUILD` CalVer. The app image has an
-independent CalVer. For a default-branch download, HACS displays/tracks a Git
-commit rather than the app image version. Record the installed HACS commit
-when troubleshooting. Old upstream tags/releases may not contain this
-integration; do not select one just because its number resembles an app version.
+The app packet-copies prepared loopback RTSP using FFmpeg `-c copy`: no second
+video encoder or direct additional camera connection. HLS requires H.264 +
+AAC-LC; video-only/H.265 passthrough can still be used as RTSP, but this HLS
+backend rejects it. For HA Alexa's current advertisement use 1280×720 H.264/AAC
+and one-second keyframes.
 
-To adopt an existing manual installation, back up only the existing integration
-folder before downloading it through HACS. Keep its config entry and entity
-registry identity. If the Python files and manifest are identical, a full HA
-restart is not needed merely to replace their provenance with a GitHub download;
-reload the integration after verification. Otherwise restart HA to load updated
-Python modules; reloading a config entry does not reliably replace cached code.
+- HLS v3 `.ts` segments: no fMP4 initialization, `EXT-X-MAP`, LL-HLS parts,
+  extra web UI or forced gzip. Actual SPS codec/profile/level, dimensions and
+  measured bandwidth populate the master. FFmpeg owns the continuous TS muxer.
+- Ready requires fresh media and a window of at least three target durations.
+  Long GOPs/durations increase cold start; preload is recommended for Echo's
+  startup deadline, not a guarantee of end-to-end latency.
+- At most 4 MiB per segment and 16 MiB in the ring. One serialized upload/probe
+  can hold another 4 MiB, the JPEG cache another 2 MiB; FFmpeg also has process
+  memory. **16 MiB is not a total app RSS limit.** No media files are created.
+- Removed segments remain available for their duration plus the playlist
+  window. Hard RAM limits reject excessive bitrate/GOP/window combinations
+  rather than evicting promised URLs. Reduce those settings if
+  `buffer_limit_exceeded` persists.
+- Five-second I/O/probe/snapshot deadlines, stale-worker detection and 1–15
+  second reconnect backoff. FFmpeg handles ordinary packet timing; stalled or
+  incompatible media is not advertised as ready.
+- Worker/App restart changes the playback generation. Old sessions cannot
+  fetch new-generation media under previous URLs; request playback again.
+- Without app preload or HA/playback keepalives, workers stop after about
+  60 seconds idle. HA unload revokes its sessions/polling, **not** the shared
+  preloaded App backend.
+- JPEGs come from current HLS segments, cached for at most three seconds and
+  forwarded at app resolution. No snapshot source entity/credential is needed.
+  The bridge is playback-only; recording uses the original camera.
 
-### Manual GitHub installation (without HACS)
+The [private v1 API](../../internal/hls/README.md) permits only configured output
+names/known filenames on fixed loopback port 1984. Redirects are rejected.
+Private FFmpeg PUT uploads use an ephemeral RAM capability, distinct from the
+playback generation; it is not a user/password and is never returned in status.
 
-Download the repository archive at a reviewed full commit SHA from GitHub, then
-copy **only** `custom_components/local_hls_camera` into the same folder under
-`/config/custom_components`. Do not copy a local uncommitted development tree.
-Do not overwrite an existing installation without reviewing its version and
-backing up that exact folder. Restart HA after new or changed runtime code.
+## Access and trust
 
-### Camera setup
+App API/RTSP stay loopback-only; no forwarding or additional App privilege is
+needed. Normal HA authentication validates path-specific expiring signatures
+on **every** master, child and segment URL, followed by entity read checks.
+Sessions last at most 10 minutes with at most eight per camera. These URLs
+are bearer capabilities: never publish/log them. The existing read-only HA
+Content system user is reused; no account/token/password is created.
 
-1. Open **Settings → Devices & services → Add integration → Local HLS Camera**.
-2. Choose a distinct test name and an existing RTSP source camera. Do not replace
-   or rename the original camera yet.
-3. Optionally enable **Preload stream** in the new camera's normal HA settings.
-   This retains one local RTSP/remux worker; the go2rtc app has its own independent
-   source/encoder preload setting.
-4. Expose only the new test camera to Alexa, then verify a real Echo live picture
-   **without triggering the doorbell/gong**. Only after that should existing
-   consumers be migrated deliberately.
+Configuration is admin-only; playback is **not inherently admin-only**:
+authorized HA users and holders of valid media capabilities can view it.
+Custom integrations run with HA process privileges and are not sandboxed.
+Minimal code is not an OS-enforced access boundary. HA/Supervisor admins and
+host-network apps remain trusted. Masking does not encrypt secrets from admins.
+Diagnostics expose counters/fixed error codes, never credentials, camera URLs,
+upload capabilities or signed playback links. This is not an open URL/file proxy.
 
-### Promote a verified camera
-
-Check references to the test entity/name before renaming it. Give the integration
-and camera a meaningful production name, keep the RTSP source entity unchanged,
-and use a distinct stable entity ID for the HLS wrapper. Reapply/read back the
-native camera preload preference for the new ID and reload **only this config
-entry** so its adapter uses the renamed entity for permission checks. Review
-voice names too: expose only one camera for each Alexa name, then synchronize
-Alexa. An existing `Zeige <name>` action can remain unchanged if the new camera
-takes over that same voice name. Verify without invoking the doorbell automation.
-
-Keep camera credentials in the existing source app. No extra camera user,
-HA login, Supervisor token, app privilege, HA configuration mount, additional
-listening port or router forwarding is needed.
-
-## Input and settings
-
-Input must be **H.264 + AAC-LC**, transported over RTSP/TCP. Other camera vendors
-and local RTSP-producing apps can be used. There are no Reolink names or paths
-in the code. This integration does not transcode or add audio: use the source
-app's compatibility encoder if the camera produces H.265 or another audio codec.
-For HA's current native Alexa advertisement, use a 1280×720 H.264/AAC output.
-
-| Setting | Default | Range / purpose |
-| --- | --- | --- |
-| Source camera | required | Existing HA camera with an RTSP/RTSPS source; recursive sources are rejected |
-| Target segment duration | 1 second | 1–3; segments end at the next keyframe, never at arbitrary byte boundaries |
-| Retained segments | 6 | Target 3–10; a jitter-compensation segment may be retained, bounded by 16 MiB total |
-| Preload stream | standard HA preference | Keeps the remux worker warm; no duplicated integration-specific preference |
-
-The input keyframe interval should be at most the target segment duration.
-The HLS target duration is fixed at `ceil(segment_seconds)`; input GOPs that
-cannot fit within it are rejected instead of publishing an invalid playlist.
-Eviction preserves a live window of at least three target durations; a stream
-that cannot satisfy this within the memory bound is rejected.
-The default 1-second GOP is a good starting point, not a guaranteed end-to-end
-Alexa startup time. Wider GOPs and extra buffered segments increase latency.
-
-## Media and resource handling
-
-- PyAV copies compressed packets into MPEG-TS; there is **no second encoder**.
-- Complete segments contain PAT/PMT, H.264 decoder configuration and a starting
-  keyframe. Transport continuity counters continue across segments; reconnects
-  are represented with HLS discontinuities and monotonic media sequences.
-- Legacy HLS v3: no `EXT-X-MAP`/separate initialization file, LL-HLS parts or
-  forced gzip compression. The master reports the source's actual codec metadata.
-- Media stays in RAM: at most 4 MiB per segment and 16 MiB in the published ring.
-  Pending publication is also bounded. No camera recording or segment directory
-  is created. The normal HA camera snapshot action remains subject to HA's own
-  permissions and path allowlist; this integration does not make recordings.
-- Network open/read timeouts are 5 seconds. Reconnect backoff is 1–15 seconds.
-  Stale media is not advertised as a working live stream.
-- Duplicate packets and decode-time regressions of up to 0.5 seconds are
-  discarded per track before muxing, including across segment boundaries.
-  Valid timestamps are preserved; no vendor-specific clock rewrite or second
-  encoder is added. Small audio jitter can therefore cause a brief audio gap,
-  rather than disconnecting the entire video stream. Larger backward resets,
-  forward jumps above 30 seconds, or more than six consecutive packets without
-  timestamps on a track trigger a clean reconnect and HLS discontinuity.
-  These are fixed safety limits, not additional UI settings.
-- Without preload, a worker stops after 60 seconds without playback requests.
-  Unloading or stopping HA stops the worker and revokes all playback sessions.
-
-## Access control and trust boundary
-
-HTTP routes are registered **inside HA**, so existing HA HTTPS/remote access
-serves them. The app's loopback RTSP and API are not exposed to Alexa or the
-internet. The normal HA Alexa handler obtains the new camera's HLS URL.
-
-All master playlists, child playlists and segments use HA's own **path-specific,
-expiring signed URLs**. Signatures are validated by the normal HA authentication
-middleware; entity read permission is also checked. Playback sessions are limited
-to 10 minutes and eight concurrent sessions per camera. URLs act as temporary
-bearer capabilities: possession allows viewing their corresponding resource;
-do not publish or log them. HA's existing read-only Content system user is reused;
-the integration does not create a user or store a new password/token.
-
-Configuration is through HA's admin configuration UI. Playback is not inherently
-admin-only: authorized HA users or holders of valid signed playback URLs can view
-it. **Custom integrations are not sandboxed** and run with the HA process's
-privileges. Minimal code access is not an OS-enforced read-only security boundary.
-
-The route only serves its in-memory playlists/segments. It is not an arbitrary
-URL proxy or file server and accepts no shell command or FFmpeg arguments.
-Diagnostics contain counts and fixed error codes, never stream URLs or passwords.
-
-## Testing and maintenance
+## Tests, status and maintenance
 
 ```sh
+go test ./...
+go test -race ./internal/hls ./internal/hassaddon
+go build -o /tmp/local-hls-go2rtc .
 python3.14 -m venv .venv
 .venv/bin/pip install -r requirements-extension-test.txt
-.venv/bin/ruff check custom_components tests/local_hls_camera
-.venv/bin/python -m pytest tests/local_hls_camera
+GO2RTC_TEST_BINARY=/tmp/local-hls-go2rtc .venv/bin/python -m pytest -q
 ```
 
-The test runner needs FFmpeg with `libx264` and AAC to generate synthetic media.
-Tests remux and independently decode real synthetic segments, check counters,
-playlists and memory bounds, and exercise the installed HA authentication
-middleware (including missing, expired and tampered signatures on every URL).
-An isolated HA config-flow/platform test verifies setup and unload. Setting
-`GO2RTC_TEST_BINARY` to a locally built go2rtc executable additionally exercises
-real loopback RTSP with synthetic media; CI always enables that test.
-No personal camera images or credentials are committed as fixtures.
+FFmpeg/ffprobe generate synthetic fixtures. Go tests cover bounds, private
+uploads, playlists, shutdown/failure and real HLS/JPEG output. Python tests
+cover HA auth/ACL/signatures, expiry/generations, migration, redirect/size
+rejection, setup/unload and the native Alexa handler. End-to-end tests exercise
+RTSP → app → signed HA → independent decoder, repeated live-window rotations
+and App restart. Container tests also verify generated settings for landscape,
+wide/portrait inputs and an initially offline camera. No personal media is committed.
 
-CI runs on integration changes and weekly with read-only repository permissions.
-The baseline suite guards the current internal HA contract; a scheduled latest-HA
-job detects upstream interface changes. Neither job publishes an app container or
-installs anything into a live HA system.
+The preceding HA-owned remuxer had a user-confirmed Echo Show 15 (first
+generation) picture on 2026-10-11. The new App backend is tested synthetically;
+actual Echo playback after migration must be checked separately. CI/readiness
+alone do not prove that the Echo displays video.
 
-### Operational checks and troubleshooting
+Expected warm diagnostics: `running: true`, `ready: true`, `media_owner: app`,
+bounded counters and no error. Unsigned/tampered requests return 401, denied
+entity reads 403, missing media 404, expired session/generation 410, unavailable
+media 503. For discovery, expose one camera per name and sync Alexa; stale
+Amazon entries may need separate cleanup. Do not patch Core or expose App ports.
 
-- In the integration diagnostics, expect `running: true`, `ready: true`, a
-  bounded `buffer_segments`/`buffer_bytes` count and `last_error: null` after
-  warm-up. These are local worker checks, not proof of an Echo live picture.
-- A brief `media_io_error` can occur on source interruption; the worker retries
-  with bounded backoff. Persistent errors require checking the source app,
-  RTSP reachability and the required input codecs/keyframe interval.
-- `timestamp_discontinuity` means the source clock reset or jumped beyond the
-  safety limits; `missing_packet_timestamps` means a track stopped providing
-  usable packet timing. Duplicate/briefly late packets do not require reconnects.
-- A request without valid HA authentication or a valid path signature must
-  return HTTP **401**. Expired playback sessions return **410**; stale/not-yet-ready
-  media returns **503**. Do not log or share signed playback URLs.
-- If Alexa cannot find the renamed camera, check its exposure and synchronize
-  devices before retesting the exact new voice name.
-- If Alexa finds it but says the camera is unresponsive, check remote HTTPS
-  access, diagnostics and logs. Do not change HA Core files or expose the app's
-  loopback API/RTSP ports to the internet.
-- Update through HACS from a reviewed GitHub revision. Review the baseline/latest
-  CI results before upgrading HA because the stream adapter uses an internal API.
-- Keep secrets and real camera recordings out of issues, commits and test fixtures.
+## Versions and rollback
 
-## Changelog
+**2026.10.3:** App-owned HLS/buffering/reconnect/snapshots; version-2 config
+migration preserves entity identity and removes the Generic-camera dependency.
+Old Python PyAV worker/ring and its timestamp-specific options/code are removed.
+App FFmpeg and freshness checks replace that implementation; old fixed Python
+timestamp limits are not misleadingly presented as current functionality.
 
-### 2026.10.2
+**2026.10.2:** previous HA-owned remuxer with per-track timestamp-jitter guard.
 
-- Handle duplicate/late RTSP packets generically before MPEG-TS muxing, avoiding
-  repeated reconnects caused by small audio decode-time regressions.
-- Preserve valid source timing and reconnect on genuine clock discontinuities.
-- Add real PyAV duplicate/regression tests and longer synthetic RTSP coverage.
-- Runtime code changed: install through HACS from GitHub, then restart HA Core
-  once to load the new modules. A config-entry reload alone is not sufficient.
+App and integration have separate CalVer versions; HACS default-branch updates
+track commits, not image tags. Weekly container builds refresh base packages.
+Baseline/latest integration CI is read-only and does not deploy to live HA.
 
-### 2026.10.1
-
-- First standalone HA compatibility camera: RTSP H.264/AAC to MPEG-TS HLS v3.
-- UI configuration, native preload preference and source-camera snapshots.
-- HA-signed, expiring, permission-checked playlists and segments; no extra user.
-- RAM-only bounded buffers, reconnect backoff and unload/session cleanup.
-- HA config-flow, native Alexa handler, HTTP auth and synthetic media/RTSP tests.
-- Native Echo live picture confirmed on the baseline described above.
-- HACS custom-repository installation and migration/update guidance.
-
-## Rollback
-
-First disable the **new** integration in HA and remove only its Alexa exposure.
-Its worker stops and its playback URLs become invalid. The original camera and
-automation keep working as before. To remove the installed code, move the exact
-`/config/custom_components/local_hls_camera` folder out of `custom_components`
-and restart HA. Do not delete or overwrite Core files or edit `.storage` manually.
-Removing a config entry also removes its entities; take a usable HA backup before
-such a deletion if preserving its registry identity matters.
+Before migration, rollback uses the App backup and previous GitHub/HACS code.
+**After migration**, old 2026.10.2 code cannot read the new config entry:
+restore a usable pre-migration HA backup as well as App/code through HA's
+supported restore flow, with explicit operator approval. Never edit `.storage`.
+Keeping the Generic source until actual Echo verification preserves that fallback.

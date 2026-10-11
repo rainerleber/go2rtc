@@ -13,11 +13,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    CONF_SEGMENT_COUNT,
-    CONF_SEGMENT_SECONDS,
-    CONF_SOURCE_ENTITY,
-    DEFAULT_SEGMENT_COUNT,
-    DEFAULT_SEGMENT_SECONDS,
+    CONF_STREAM_NAME,
     DOMAIN,
 )
 from .stream import StreamAdapter
@@ -45,15 +41,17 @@ class LocalHlsCamera(Camera):
         self._attr_name = entry.title
         self.adapter: StreamAdapter | None = None
 
+    @property
+    def available(self) -> bool:
+        return self.adapter is None or self.adapter.available
+
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
         settings = await get_dynamic_camera_stream_settings(self.hass, self.entity_id)
         self.adapter = StreamAdapter(
             self.hass,
             self.entry.entry_id,
-            self.entry.data[CONF_SOURCE_ENTITY],
-            self.entry.options.get(CONF_SEGMENT_SECONDS, DEFAULT_SEGMENT_SECONDS),
-            self.entry.options.get(CONF_SEGMENT_COUNT, DEFAULT_SEGMENT_COUNT),
+            self.entry.options.get(CONF_STREAM_NAME, self.entry.data[CONF_STREAM_NAME]),
             settings,
         )
         self.adapter.entity_id = self.entity_id
@@ -62,6 +60,7 @@ class LocalHlsCamera(Camera):
         # class, provider registry, worker or Alexa handler is replaced.
         self.stream = cast(Stream, self.adapter)
         self.hass.data[DOMAIN][self.entry.entry_id] = self.adapter
+        self.adapter.start_monitor()
 
         async def shutdown(event) -> None:
             if self.adapter is not None:
