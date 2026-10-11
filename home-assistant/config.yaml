@@ -14,9 +14,13 @@ map:
   - type: addon_config
     read_only: false
 options:
-  config: ""
+  camera_address: ""
+  camera_username: "go2rtc_view"
   camera_password: ""
+  camera_stream: sub
 schema:
-  config: str
+  camera_address: str
+  camera_username: str
   camera_password: password
+  camera_stream: list(main|sub|ext)
 image: "ghcr.io/rainerleber/go2rtc-chainguard"

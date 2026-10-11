@@ -2,8 +2,10 @@
 
 ## Next
 
-- Accept the complete YAML as an app option and keep the camera password in a
-  separate masked `password` field referenced as `${CAMERA_PASSWORD}`.
+- Replace the raw YAML text area with labelled camera address, username,
+  password and stream fields.
+- Generate the private loopback-only go2rtc configuration inside the app and
+  safely URL-escape camera credentials.
 - Keep access limited to the app-specific configuration directory; no Home
   Assistant configuration mount or Supervisor API token is granted.
 

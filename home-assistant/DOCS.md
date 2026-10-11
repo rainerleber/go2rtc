@@ -8,42 +8,16 @@ Add this repository to **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Chainguard**, but do not start it before creating the
-configuration described below.
+Install **go2rtc Chainguard** and enter these settings on the Configuration tab:
 
-## Configuration
+- **Camera address:** Reolink hostname or IP address, without `rtsp://` or a path
+- **Camera username:** a dedicated Reolink live-view-only user
+- **Camera password:** the password for that user
+- **Source stream:** `sub` is recommended for fast startup on an Echo Show
 
-Set the complete YAML in `config` and the secret separately in the masked
-`camera_password` field. The YAML must use `${CAMERA_PASSWORD}` at the password
-position. On every start the app writes `go2rtc.yaml` with mode 0600 inside its
-private `/config` directory. Use a dedicated Reolink account that has live-view
-permission only.
-
-This example binds every server to loopback and disables WebRTC because the
-Alexa proxy only needs local RTSP. Replace the placeholders locally:
-
-```yaml
-app:
-  modules: [api, ffmpeg, rtsp]
-
-api:
-  listen: "127.0.0.1:1984"
-
-rtsp:
-  listen: "127.0.0.1:8554"
-
-webrtc:
-  listen: ""
-
-streams:
-  reolink_haustuer:
-    - rtsp://VIEW_ONLY_USER:${CAMERA_PASSWORD}@CAMERA_ADDRESS:554/h264Preview_01_sub
-
-  reolink_haustuer_alexa:
-    - >-
-      ffmpeg:reolink_haustuer#video=h264#audio=aac
-      #raw=-vf scale=960:720,pad=1280:720:160:0:black
-```
+The app generates `/config/go2rtc.yaml` in its private configuration directory
+with mode 0600. Its API and RTSP listeners are fixed to loopback, WebRTC is
+disabled, and the Alexa-compatible stream is transcoded automatically.
 
 The corresponding Home Assistant Generic Camera stream source is:
 
@@ -56,14 +30,14 @@ Expose only that Generic Camera entity to Alexa.
 ## Security notes
 
 - Use a dedicated Reolink account with live-view permission only.
+- The password field is masked in the UI. Home Assistant administrators remain
+  a trust boundary because the Supervisor and the app must provide the secret
+  to the camera connection.
 - The app has no access to Home Assistant's configuration or Supervisor API.
-- Keep API and RTSP listeners on `127.0.0.1`; do not forward their ports.
+- API and RTSP listeners are fixed to `127.0.0.1` and no ports are forwarded.
 - The image runs without privileged mode and has no host filesystem access.
 - The runtime contains go2rtc and Wolfi's FFmpeg 9 package. It does not include
   Python or hardware acceleration; Wolfi Base does include BusyBox and APK.
-- Camera URLs contain credentials. Treat `go2rtc.yaml` and app logs as secrets.
-- go2rtc deliberately supports FFmpeg and external command execution. Do not
-  expose its API to untrusted networks and do not paste untrusted configuration.
 
 ## Updates and rollback
 

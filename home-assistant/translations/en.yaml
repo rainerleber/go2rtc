@@ -1,0 +1,13 @@
+configuration:
+  camera_address:
+    name: Camera address
+    description: Hostname or IP address of the Reolink camera, without a protocol or path.
+  camera_username:
+    name: Camera username
+    description: Dedicated Reolink user with live-view permission only.
+  camera_password:
+    name: Camera password
+    description: Password for the dedicated Reolink user. The field is masked in the UI.
+  camera_stream:
+    name: Source stream
+    description: Use the sub stream for faster startup on an Echo Show.
