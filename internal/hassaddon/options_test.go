@@ -53,6 +53,9 @@ func TestBuildConfigLegacyMigration(t *testing.T) {
 	if !strings.Contains(c.FFmpeg["h264"], "-g:v 15") || !strings.Contains(c.FFmpeg["h264"], "-bf 0") {
 		t.Fatal("low-latency encoder missing")
 	}
+	if !strings.Contains(c.FFmpeg["app_scale"], "-map 0:v:0 -map 0:a:0?") {
+		t.Fatal("video must be required, audio optional")
+	}
 	if strings.Contains(c.Streams["reolink_haustuer_alexa"][0], "p@ss") {
 		t.Fatal("secret passed to FFmpeg")
 	}

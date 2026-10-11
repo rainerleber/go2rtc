@@ -86,9 +86,11 @@ func buildConfig(b []byte) ([]byte, error) {
 		gop := o.VideoFPS * o.KeyframeSecs
 		// FFmpeg connects to the local shared source, keeping camera credentials out of its argv.
 		config["ffmpeg"] = map[string]string{
-			"app_rtsp":  "-fflags nobuffer -flags low_delay -analyzeduration 250000 -probesize 262144 -timeout {timeout} -rtsp_transport tcp -i {input}",
-			"h264":      fmt.Sprintf("-c:v libx264 -profile:v main -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -bf 0 -r:v %d -g:v %d -keyint_min:v %d -sc_threshold:v 0 -b:v %dk -maxrate:v %dk -bufsize:v %dk", o.VideoFPS, gop, gop, o.VideoBitrate, o.VideoBitrate, o.VideoBitrate),
-			"app_scale": fmt.Sprintf(`-vf "scale=%d:%d:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"`, o.VideoWidth, o.VideoHeight, o.VideoWidth, o.VideoHeight),
+			"app_rtsp": "-fflags nobuffer -flags low_delay -analyzeduration 250000 -probesize 262144 -timeout {timeout} -rtsp_transport tcp -i {input}",
+			"h264":     fmt.Sprintf("-c:v libx264 -profile:v main -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -bf 0 -r:v %d -g:v %d -keyint_min:v %d -sc_threshold:v 0 -b:v %dk -maxrate:v %dk -bufsize:v %dk", o.VideoFPS, gop, gop, o.VideoBitrate, o.VideoBitrate, o.VideoBitrate),
+			// Explicitly require video; automatic FFmpeg selection can silently
+			// produce audio-only output when video metadata arrives late.
+			"app_scale": fmt.Sprintf(`-map 0:v:0 -map 0:a:0? -vf "scale=%d:%d:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"`, o.VideoWidth, o.VideoHeight, o.VideoWidth, o.VideoHeight),
 		}
 		stream = "ffmpeg:" + o.SourceName + "#input=app_rtsp#video=h264#audio=aac#raw=app_scale"
 	}

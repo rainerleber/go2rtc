@@ -39,8 +39,9 @@ for shape in landscape wide portrait; do
   # when audio starts before the first decodable RTSP video keyframe.
   timeout 30s docker run --rm --network host -v "$task_dir/results:/results" \
     --entrypoint /usr/bin/ffmpeg "$image" -hide_banner -loglevel error \
-    -rtsp_transport tcp -analyzeduration 250000 -probesize 262144 \
-    -i rtsp://127.0.0.1:8554/test_output -frames:v 60 -c copy -y "/results/$shape.mkv"
+    -rtsp_transport tcp -analyzeduration 2000000 -probesize 1048576 \
+    -i rtsp://127.0.0.1:8554/test_output -map 0:v:0 -map 0:a:0 \
+    -frames:v 60 -c copy -y "/results/$shape.mkv"
   docker run --rm -v "$task_dir/results:/results:ro" \
     --entrypoint /usr/bin/ffprobe "$image" -v error -show_streams -show_frames \
     -of json "/results/$shape.mkv" > "$task_dir/results/$shape.json"

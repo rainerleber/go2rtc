@@ -2,6 +2,11 @@
 
 ## Next
 
+- Require an explicit video track instead of silently accepting FFmpeg's
+  audio-only automatic selection; audio remains optional for silent cameras.
+- Make runtime capture deterministic with explicit tracks, sufficient probe
+  time and fixed video-frame counts under a timeout.
+
 - Keep upgrade defaults empty for path/names so Supervisor's default merge
   cannot override existing source paths or stream names; test the real merge.
 

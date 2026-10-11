@@ -5,8 +5,10 @@
 This app accepts **one vendor-independent RTSP camera** and exposes two local
 streams: the original source and a compatibility output. In `h264_aac` mode,
 FFmpeg reads the shared local source, converts video to H.264 Main/Level 4.1
-and audio to AAC, and preserves the image aspect ratio with black padding.
+and available audio to AAC, and preserves the image aspect ratio with black padding.
 It handles 4:3, 16:9 and portrait images without vendor-specific geometry.
+Video is mapped explicitly so incomplete startup metadata cannot silently select
+an audio-only output. A source with no audio remains video-only; silence is not synthesized.
 No raw shell/FFmpeg settings, cloud camera account, or browser workaround is needed.
 For multiple cameras or other protocols, use the regular go2rtc binary with
 its native configuration; this app intentionally keeps its UI focused.
