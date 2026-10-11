@@ -16,10 +16,10 @@ configuration:
     description: "Lokales Kamera-Passwort. Maskiert; vertrauenswürdige Home-Assistant-Admins können es auslesen."
   source_name:
     name: "Quellstream-Name"
-    description: "Name des originalen lokalen RTSP-Streams. Bereits verwendete Namen beibehalten."
+    description: "Name des originalen lokalen RTSP-Streams. Leer = camera bzw. bestehender Migrationsname. Bereits verwendete Namen beibehalten."
   output_name:
     name: "Ausgabestream-Name"
-    description: "Name des kompatiblen Streams. Muss sich vom Quellstream-Namen unterscheiden."
+    description: "Name des kompatiblen Streams. Leer = camera_compatible bzw. bestehender Migrationsname. Muss sich vom Quellstream unterscheiden."
   output_mode:
     name: "Ausgabemodus"
     description: "h264_aac normalisiert das Video; passthrough verwendet keinen Encoder und behält die Codecs bei."

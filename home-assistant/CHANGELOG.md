@@ -2,6 +2,9 @@
 
 ## Next
 
+- Keep upgrade defaults empty for path/names so Supervisor's default merge
+  cannot override existing source paths or stream names; test the real merge.
+
 - Accept vendor-independent RTSP paths, ports and stream names, with automatic
   migration of existing Reolink configurations.
 - Add structured output mode, preload, resolution, frame-rate, keyframe and

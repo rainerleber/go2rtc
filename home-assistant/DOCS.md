@@ -41,11 +41,11 @@ the app. Changes take effect on the next app restart.
 | --- | --- | --- |
 | `camera_address` | empty; required | Bare camera hostname, IPv4 or IPv6 address; no protocol/port/path. |
 | `camera_port` | 554 | RTSP port, 1–65535. |
-| `camera_path` | /stream1 | Camera-specific absolute RTSP path, optionally including a query. No full URL or fragment. |
+| `camera_path` | empty; required for new installs | Camera-specific absolute RTSP path, optionally including a query. No full URL or fragment. |
 | `camera_username` | empty | Existing **local camera** account; empty only for an intentionally unauthenticated source. |
 | `camera_password` | empty | Masked password; requires a username when nonempty. |
-| `source_name` | camera | Original local stream name. Letters, digits, underscore/hyphen, maximum 64 characters. |
-| `output_name` | camera_compatible | Output stream name; must differ from source name. |
+| `source_name` | empty → camera | Original local stream name. Letters, digits, underscore/hyphen, maximum 64 characters. |
+| `output_name` | empty → camera_compatible | Output stream name; must differ from source name. |
 | `output_mode` | h264_aac | Normalize to H.264/AAC. `passthrough` relays unchanged and does not launch FFmpeg. |
 | `preload` | true | Keep output warm; false saves resources but increases cold-start latency. |
 | `video_width` | 1280 | Even output width, 160–1920 pixels. |
@@ -68,6 +68,8 @@ Examples of **paths**, not credentials:
 
 Existing four-field app configurations migrate automatically: their Reolink
 path and `reolink_haustuer` / `reolink_haustuer_alexa` names are retained.
+Empty path/name defaults are intentional: Supervisor merges defaults into old
+options during an update; nonempty defaults would overwrite migration choices.
 New installations use generic names. When explicitly switching to the new
 fields, enter both desired names to preserve existing consumers.
 Do not rename stream names without updating their Home Assistant camera URLs.

@@ -2,8 +2,11 @@ package hassaddon
 
 import (
 	"encoding/json"
+	"os"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 type generated struct {
@@ -52,6 +55,32 @@ func TestBuildConfigLegacyMigration(t *testing.T) {
 	}
 	if strings.Contains(c.Streams["reolink_haustuer_alexa"][0], "p@ss") {
 		t.Fatal("secret passed to FFmpeg")
+	}
+}
+
+func TestSupervisorDefaultsPreserveLegacyConfiguration(t *testing.T) {
+	// Supervisor merges new defaults into installed options before the binary
+	// runs. Exercise the real schema defaults, not just a four-field fixture.
+	b, err := os.ReadFile("../../home-assistant/config.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var appConfig struct {
+		Options map[string]any `yaml:"options"`
+	}
+	if err = yaml.Unmarshal(b, &appConfig); err != nil {
+		t.Fatal(err)
+	}
+	for key, value := range map[string]any{"camera_address": "192.0.2.10", "camera_username": "viewer", "camera_password": "test-password", "camera_stream": "sub"} {
+		appConfig.Options[key] = value
+	}
+	b, err = json.Marshal(appConfig.Options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := generate(t, string(b))
+	if len(c.Streams["reolink_haustuer_alexa"]) != 1 || !strings.HasSuffix(c.Streams["reolink_haustuer"][0], "/h264Preview_01_sub") {
+		t.Fatal("Supervisor defaults broke legacy stream paths/names")
 	}
 }
 func TestBuildConfigGeneric(t *testing.T) {

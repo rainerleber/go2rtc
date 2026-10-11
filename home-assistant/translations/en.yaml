@@ -16,10 +16,10 @@ configuration:
     description: "Local camera password. Masked, but trusted Home Assistant administrators can access it."
   source_name:
     name: "Source stream name"
-    description: "Original local RTSP stream name. Preserve names already used by Home Assistant."
+    description: "Original local RTSP stream name. Empty selects camera or the existing migration name. Preserve names already used by Home Assistant."
   output_name:
     name: "Output stream name"
-    description: "Compatibility stream name. Must differ from the source name."
+    description: "Compatibility stream name. Empty selects camera_compatible or the existing migration name. Must differ from the source name."
   output_mode:
     name: "Output mode"
     description: "h264_aac normalizes the stream; passthrough uses no encoder and preserves original codecs."

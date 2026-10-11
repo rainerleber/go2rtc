@@ -16,11 +16,13 @@ map:
 options:
   camera_address: ""
   camera_port: 554
-  camera_path: "/stream1"
+  camera_path: ""
   camera_username: ""
   camera_password: ""
-  source_name: camera
-  output_name: camera_compatible
+  # Supervisor merges defaults into existing options on upgrade. Empty values
+  # let the generator preserve legacy paths/names or choose generic new names.
+  source_name: ""
+  output_name: ""
   output_mode: h264_aac
   preload: true
   video_width: 1280
