@@ -26,7 +26,6 @@ func Init() {
 			Password   string `yaml:"password"`
 			LocalAuth  bool   `yaml:"local_auth"`
 			BasePath   string `yaml:"base_path"`
-			StaticDir  string `yaml:"static_dir"`
 			Origin     string `yaml:"origin"`
 			TLSListen  string `yaml:"tls_listen"`
 			TLSCert    string `yaml:"tls_cert"`
@@ -50,8 +49,6 @@ func Init() {
 	allowPaths = cfg.Mod.AllowPaths
 	basePath = cfg.Mod.BasePath
 	log = app.GetLogger("api")
-
-	initStatic(cfg.Mod.StaticDir)
 
 	HandleFunc("api", apiHandler)
 	HandleFunc("api/config", configHandler)

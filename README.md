@@ -8,8 +8,10 @@ The app accepts vendor-independent RTSP cameras and either relays their stream
 unchanged or produces a warm H.264/AAC compatibility stream. Structured settings
 control names, resolution, frame rate, bitrate and keyframe spacing. Scaling
 preserves the source aspect ratio, including portrait doorbells. No Reolink
-cloud or browser workaround is required. The original go2rtc protocol modules
-remain available when the binary is used outside the Home Assistant app.
+cloud or browser workaround is required. This fork targets the Home Assistant
+app only: it retains the local RTSP, FFmpeg and preload pipeline, not upstream
+web pages, WebRTC, HomeKit, cloud providers or tunnel modules. Home Assistant
+creates the camera entity and supplies HLS to Alexa; the app does not serve HLS.
 
 ## Install in Home Assistant
 
@@ -57,7 +59,7 @@ publish job.
 The Home Assistant app gets host networking and its own configuration directory
 only. It has no Supervisor token, Home Assistant configuration mount, device
 access, or privileged mode. The recommended configuration binds its API and
-RTSP listener to loopback and disables WebRTC. This is enforced by the app's
+RTSP listener to loopback. There is no WebRTC listener or embedded web UI. This is enforced by the app's
 generated configuration.
 
 go2rtc can launch FFmpeg, and camera URLs contain credentials. Do not expose its
@@ -85,5 +87,5 @@ The fork uses the independent Go module path
 project and historical upstream issues or releases.
 
 Container builds use [`docker/chainguard.Dockerfile`](docker/chainguard.Dockerfile).
-Upstream feature documentation is maintained in the
-[original go2rtc repository](https://github.com/AlexxIT/go2rtc).
+Documentation for upstream-only features in the original project does not
+describe this reduced HA app. See the app documentation for supported settings.

@@ -35,6 +35,12 @@ for shape in landscape wide portrait; do
       "$image" -config /source.json >/dev/null
   fi
   await_status active
+  # HA owns HLS and the user interface; upstream web and streaming endpoints
+  # must not accidentally reappear in this HA-only binary.
+  for path in / /index.html /config.html /api/webrtc /api/stream.m3u8; do
+    status="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:1984$path")"
+    [[ "$status" == 404 ]] || { echo "Unexpected endpoint $path: $status"; exit 1; }
+  done
   # Capture a fixed number of video frames. A wall-clock -t cutoff is flaky
   # when audio starts before the first decodable RTSP video keyframe.
   timeout 30s docker run --rm --network host -v "$task_dir/results:/results" \

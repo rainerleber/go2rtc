@@ -10,8 +10,10 @@ It handles 4:3, 16:9 and portrait images without vendor-specific geometry.
 Video is mapped explicitly so incomplete startup metadata cannot silently select
 an audio-only output. A source with no audio remains video-only; silence is not synthesized.
 No raw shell/FFmpeg settings, cloud camera account, or browser workaround is needed.
-For multiple cameras or other protocols, use the regular go2rtc binary with
-its native configuration; this app intentionally keeps its UI focused.
+This fork is limited to the Home Assistant app. It does not include the
+upstream web UI, WebRTC, HomeKit, cloud providers or tunnel modules.
+Home Assistant receives RTSP and produces its own HLS output for Alexa.
+No file from the removed upstream `www` directory is needed for this path.
 
 The compatibility output defaults to 1280x720 at 15 fps, 1500 kbit/s and one
 keyframe per second. Short keyframe spacing reduces the wait for a decodable
@@ -153,6 +155,28 @@ Measure both cold and warm **first decoded frame**, not just ffprobe's execution
 time (which includes probing). An RTSP measurement does not equal Alexa screen
 latency. Check source reachability/authentication, preload status, CPU and HA
 HLS logs before increasing privileges or changing firewall rules.
+
+When diagnosing Alexa, distinguish client requests from your own probes. A
+successful master-playlist response without requests for the media playlist or
+segments points to a failure before media decoding; more transcoding does not
+establish that the playlist is usable by the client. Inspect HTTP content
+encoding as well as HLS syntax. Older GStreamer clients can disable gzip
+decoding by default ([upstream source](https://github.com/GStreamer/gst-plugins-good/blob/1.4.5/ext/soup/gstsouphttpsrc.c)).
+A server that forces gzip can therefore be incompatible. This is a diagnostic
+hypothesis until a controlled test confirms it on the actual Echo; a User-Agent
+alone does not prove its full decoder configuration. HA owns these HTTP
+responses, so this app's RTSP/FFmpeg settings cannot change their compression.
+
+Successful segment downloads still do not prove playback. HA's fMP4 output
+requires a separate initialization section, referenced by `EXT-X-MAP` (see
+[HLS initialization requirements](https://www.rfc-editor.org/rfc/rfc8216.html#section-3.3)).
+Check that the actual client fetches this resource as well as media segments.
+If it downloads segments but never their initialization, investigate HLS
+container/client compatibility before changing credentials or encoder settings.
+The installed HA stream implementation still uses fMP4 when LL-HLS is disabled;
+turning off LL-HLS alone does not produce legacy MPEG-TS segments.
+Any HA-side compatibility experiment should be backed up, tested on the actual
+device and rolled back if it does not fix playback. This app does not patch HA Core.
 
 ## Updates and rollback
 

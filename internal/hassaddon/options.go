@@ -38,7 +38,8 @@ type options struct {
 
 var streamName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
-// Prepare creates the app-private configuration; outside an HA app it is a no-op.
+// Prepare creates the app-private configuration. Without Supervisor options,
+// explicit native config is still accepted for isolated runtime tests.
 func Prepare() error {
 	b, err := os.ReadFile(optionsPath)
 	if errors.Is(err, os.ErrNotExist) {
@@ -76,10 +77,8 @@ func buildConfig(b []byte) ([]byte, error) {
 		u.User = url.UserPassword(o.CameraUsername, o.CameraPassword)
 	}
 	config := map[string]any{
-		"app":    map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
-		"api":    map[string]string{"listen": "127.0.0.1:1984"},
-		"rtsp":   map[string]string{"listen": "127.0.0.1:8554"},
-		"webrtc": map[string]string{"listen": ""},
+		"api":  map[string]string{"listen": "127.0.0.1:1984"},
+		"rtsp": map[string]string{"listen": "127.0.0.1:8554"},
 	}
 	stream := "rtsp://127.0.0.1:8554/" + o.SourceName
 	if o.OutputMode == "h264_aac" {

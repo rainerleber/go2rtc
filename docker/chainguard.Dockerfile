@@ -45,7 +45,7 @@ LABEL org.opencontainers.image.title="go2rtc Chainguard" \
       io.hass.type="app" \
       io.hass.arch="amd64|aarch64"
 
-EXPOSE 1984/tcp 8554/tcp 8555/tcp 8555/udp
+EXPOSE 1984/tcp 8554/tcp
 VOLUME ["/config"]
 WORKDIR /config
 

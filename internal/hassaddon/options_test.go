@@ -15,10 +15,6 @@ type generated struct {
 	FFmpeg  map[string]string   `json:"ffmpeg"`
 	RTSP    map[string]string   `json:"rtsp"`
 	API     map[string]string   `json:"api"`
-	WebRTC  map[string]string   `json:"webrtc"`
-	App     struct {
-		Modules []string `json:"modules"`
-	} `json:"app"`
 }
 
 func generate(t *testing.T, input string) generated {
@@ -44,11 +40,8 @@ func TestBuildConfigLegacyMigration(t *testing.T) {
 	if c.Preload["reolink_haustuer_alexa"] != "video&audio" {
 		t.Fatal("preload missing")
 	}
-	if c.API["listen"] != "127.0.0.1:1984" || c.RTSP["listen"] != "127.0.0.1:8554" || c.WebRTC["listen"] != "" {
+	if c.API["listen"] != "127.0.0.1:1984" || c.RTSP["listen"] != "127.0.0.1:8554" {
 		t.Fatal("listener isolation changed")
-	}
-	if strings.Join(c.App.Modules, ",") != "api,exec,ffmpeg,rtsp" {
-		t.Fatal("wrong modules")
 	}
 	if !strings.Contains(c.FFmpeg["h264"], "-g:v 15") || !strings.Contains(c.FFmpeg["h264"], "-bf 0") {
 		t.Fatal("low-latency encoder missing")
