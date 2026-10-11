@@ -1,4 +1,4 @@
-name: Chainguard image
+name: Container image
 
 on:
   workflow_dispatch:
@@ -9,7 +9,7 @@ on:
       - "**"
     paths:
       - ".github/workflows/chainguard-image.yml"
-      - "docker/chainguard.Dockerfile"
+      - "docker/Dockerfile"
       - "go.mod"
       - "go.sum"
       - "**/*.go"
@@ -18,7 +18,7 @@ on:
       - "testdata/hassaddon/**"
 
 concurrency:
-  group: chainguard-${{ github.ref }}
+  group: container-image-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -68,7 +68,7 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
-      - name: Resolve and verify Chainguard bases
+      - name: Resolve and verify base images
         id: bases
         shell: bash
         run: |
@@ -107,33 +107,33 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: docker/chainguard.Dockerfile
+          file: docker/Dockerfile
           platforms: linux/amd64
           load: true
           push: false
-          tags: go2rtc-chainguard:test
+          tags: go2rtc:test
           build-args: |
             GO_BUILDER_IMAGE=${{ steps.bases.outputs.go_builder }}
             RUNTIME_IMAGE=${{ steps.bases.outputs.runtime }}
             BUILD_VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha,scope=chainguard-amd64
-          cache-to: type=gha,mode=max,scope=chainguard-amd64
+          cache-from: type=gha,scope=go2rtc-amd64
+          cache-to: type=gha,mode=max,scope=go2rtc-amd64
 
       - name: Test runtime and required codecs
         shell: bash
         run: |
           set -euo pipefail
-          docker run --rm go2rtc-chainguard:test -version
-          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-chainguard:test -hide_banner -version
-          encoders="$(docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-chainguard:test -hide_banner -encoders 2>/dev/null)"
+          docker run --rm go2rtc:test -version
+          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc:test -hide_banner -version
+          encoders="$(docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc:test -hide_banner -encoders 2>/dev/null)"
           grep -Eq 'libx264' <<< "$encoders"
           grep -Eq ' aac ' <<< "$encoders"
-          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-chainguard:test \
+          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc:test \
             -hide_banner -loglevel error \
             -f lavfi -i testsrc2=size=320x240:rate=1 \
             -frames:v 1 -vf scale=960:720,pad=1280:720:160:0:black \
             -c:v libx264 -f null -
-          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc-chainguard:test \
+          docker run --rm --entrypoint /usr/bin/ffmpeg go2rtc:test \
             -hide_banner -loglevel error \
             -f lavfi -i anullsrc=channel_layout=mono:sample_rate=16000 \
             -t 0.1 -c:a aac -f null -
@@ -143,7 +143,7 @@ jobs:
         run: |
           # Synthetic fixtures contain no real camera credentials. Preserve
           # diagnostics in the public summary even when a test fails.
-          bash scripts/test-app-runtime.sh go2rtc-chainguard:test >app-runtime.log 2>&1 && result=0 || result=$?
+          bash scripts/test-app-runtime.sh go2rtc:test >app-runtime.log 2>&1 && result=0 || result=$?
           cat app-runtime.log
           {
             echo '### Generated app runtime test'
@@ -196,7 +196,7 @@ jobs:
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: docker/chainguard.Dockerfile
+          file: docker/Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
@@ -212,8 +212,8 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
           provenance: mode=max
           sbom: true
-          cache-from: type=gha,scope=chainguard-multiarch
-          cache-to: type=gha,mode=max,scope=chainguard-multiarch
+          cache-from: type=gha,scope=go2rtc-multiarch
+          cache-to: type=gha,mode=max,scope=go2rtc-multiarch
 
       - name: Install cosign
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2

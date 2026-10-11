@@ -29,7 +29,7 @@ Amazon/HA Cloud; this is not a completely cloud-free Alexa solution.
 
 The two components have different jobs:
 
-- **go2rtc Chainguard app:** obtains local camera media and, when needed,
+- **go2rtc app:** obtains local camera media and, when needed,
   produces a warm H.264/AAC RTSP compatibility stream with suitable keyframes.
 - **Local HLS Camera integration:** copies that stream into self-contained
   MPEG-TS HLS segments and serves them through HA's authenticated HTTP routes.

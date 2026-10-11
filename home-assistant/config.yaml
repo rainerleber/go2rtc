@@ -1,8 +1,8 @@
 # https://developers.home-assistant.io/docs/apps/configuration
-name: go2rtc Chainguard
+name: go2rtc
 version: "2026.10.27"
 slug: go2rtc_chainguard
-description: Locally rebuilt go2rtc proxy based on signed Chainguard images
+description: Local RTSP camera proxy with optional H.264/AAC compatibility output
 url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
 arch:
   - amd64

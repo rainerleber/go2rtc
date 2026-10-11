@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run on an isolated Linux Docker host. No real cameras or credentials are used.
 set -euo pipefail
-image="${1:-go2rtc-chainguard:test}"
+image="${1:-go2rtc:test}"
 task_dir="$(mktemp -d)"
 app_name="go2rtc-app-test-$$"
 source_name="go2rtc-source-test-$$"

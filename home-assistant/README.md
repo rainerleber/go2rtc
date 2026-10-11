@@ -1,7 +1,8 @@
-# go2rtc Chainguard
+# go2rtc
 
-This Home Assistant app runs the fork's independently built go2rtc image. It
-uses signed Chainguard Go and Wolfi images as its build and runtime foundation.
+This Home Assistant app provides a local RTSP camera proxy and an optional,
+preloaded H.264/AAC compatibility stream. Its container is independently built
+and published by this repository's GitHub Actions workflow.
 
 The app receives only its own configuration directory at `/config`. It does not
 receive the Home Assistant configuration directory, a Supervisor API token,

@@ -2,6 +2,10 @@
 
 ## Next
 
+- Use the plain `go2rtc` app name and functional descriptions, without branding
+  the app after its base-image provider. Keep existing app and registry
+  identifiers stable so installations retain their configuration and data.
+
 - Select H.264 Level 3.1 for 720p and Level 4.0 for larger validated outputs
   instead of unnecessarily requiring a Level 4.1 decoder.
 
@@ -40,10 +44,10 @@
 
 ## 2026.10.10.0
 
-- Initial Home Assistant app metadata for the Chainguard/Wolfi-based image.
+- Initial Home Assistant app metadata for the independently built image.
 - Limited mounts to the app-specific configuration directory.
 - Added a loopback-only Reolink-to-Alexa proxy example.
 - Updated the source and validation pipeline to Go 1.27.2.
 - Migrated the Go module namespace to `github.com/rainerleber/go2rtc`.
 - Replaced the legacy image, GitHub Pages, examples, scripts, and unused code
-  with one verified Chainguard/Wolfi image pipeline.
+  with one verified container image pipeline.

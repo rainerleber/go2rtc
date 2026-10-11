@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# The workflow resolves both public Chainguard images to verified digests.
+# The workflow resolves both configured base images to verified digests.
 ARG GO_BUILDER_IMAGE="cgr.dev/chainguard/go:latest"
 ARG RUNTIME_IMAGE="cgr.dev/chainguard/wolfi-base:latest"
 
@@ -29,15 +29,15 @@ ARG BUILD_VERSION="dev"
 
 USER 0
 
-# The Wolfi package is built from source by Chainguard and brings x264 plus all
+# The Wolfi package brings x264 plus all
 # runtime libraries through APK-signed dependencies. The resulting package set
 # is captured in the image SBOM and immutable date/run image tag.
 RUN apk add --no-cache ffmpeg-9.0
 
 COPY --from=build /out/go2rtc /usr/local/bin/go2rtc
 
-LABEL org.opencontainers.image.title="go2rtc Chainguard" \
-      org.opencontainers.image.description="go2rtc rebuilt on Chainguard's Wolfi image with Wolfi FFmpeg" \
+LABEL org.opencontainers.image.title="go2rtc" \
+      org.opencontainers.image.description="Local RTSP camera proxy with optional H.264/AAC compatibility output" \
       org.opencontainers.image.source="https://github.com/rainerleber/go2rtc" \
       org.opencontainers.image.licenses="MIT AND GPL-2.0-or-later" \
       org.opencontainers.image.version="${BUILD_VERSION}" \

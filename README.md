@@ -1,4 +1,4 @@
-# go2rtc Chainguard and Local HLS Camera for Home Assistant
+# go2rtc and Local HLS Camera for Home Assistant
 
 This fork packages [go2rtc](https://github.com/AlexxIT/go2rtc) as a small,
 independent Home Assistant app. It does not require the upstream app catalog
@@ -29,7 +29,7 @@ Add this repository under **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Chainguard**, enter the camera settings on its Configuration
+Install **go2rtc**, enter the camera settings on its Configuration
 tab, and start it. No manual YAML file is needed. Functionality, all options,
 latency tradeoffs and vendor-specific examples are documented in
 [`home-assistant/DOCS.md`](home-assistant/DOCS.md).
@@ -44,11 +44,11 @@ Only `amd64` and `arm64` are supported.
 
 ## Build and supply-chain controls
 
-[`chainguard-image.yml`](.github/workflows/chainguard-image.yml) is the container
-build and release workflow. It:
+[Container image](.github/workflows/chainguard-image.yml) is the container build
+and release workflow. It:
 
-- uses Go 1.27.2 for tests and requires the Chainguard builder to be Go 1.27;
-- resolves public Chainguard Go and Wolfi Base images to immutable digests;
+- uses Go 1.27.2 for tests and requires the builder to be Go 1.27;
+- resolves the configured Go builder and Wolfi runtime images to immutable digests;
 - verifies both base-image Sigstore signatures before use;
 - runs the complete Go test suite, `go vet`, and a clean production build;
 - installs Wolfi's APK-signed FFmpeg 9 package;
@@ -56,7 +56,21 @@ build and release workflow. It:
   transcodes matching the Alexa stream;
 - publishes `amd64` and `arm64` images with immutable `YYYY.MM.BUILD` CalVer tags;
 - emits an SBOM and provenance and keylessly signs the resulting manifest; and
-- rebuilds every Monday to consume current Chainguard and Wolfi security fixes.
+- rebuilds every Monday at 03:17 UTC to consume current base-image security fixes.
+
+Relevant source pushes trigger validation on any branch. Only `master` publishes
+images to GHCR, on a push, the weekly schedule, or a manual workflow run.
+After publishing and signing both the immutable CalVer tag and `latest`, the
+workflow commits the new version to `home-assistant/config.yaml`. Home Assistant
+downloads that published image when the app is installed or updated; the workflow
+does not restart or deploy to Home Assistant. Images are not uploaded from a
+local development machine. Changes limited to the root README or the
+`custom_components/local_hls_camera` tree do not trigger a container rebuild.
+
+The existing app slug, registry image path and workflow filename are retained
+as compatibility identifiers, not display names. This preserves installed app
+configuration/data, published image references and the workflow's CalVer build
+counter. The app and image descriptions use only the functional `go2rtc` name.
 
 All third-party GitHub Actions are pinned to commit hashes. The validation job
 has read-only repository access; write permissions exist only in the `master`
@@ -109,6 +123,6 @@ The fork uses the independent Go module path
 `github.com/rainerleber/go2rtc`. Links to `AlexxIT/go2rtc` identify the original
 project and historical upstream issues or releases.
 
-Container builds use [`docker/chainguard.Dockerfile`](docker/chainguard.Dockerfile).
+Container builds use [`docker/Dockerfile`](docker/Dockerfile).
 Documentation for upstream-only features in the original project does not
 describe this reduced HA app. See the app documentation for supported settings.

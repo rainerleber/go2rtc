@@ -1,4 +1,4 @@
-# Home Assistant app: go2rtc Chainguard
+# Home Assistant app: go2rtc
 
 ## Function
 
@@ -41,7 +41,7 @@ Add this repository to **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Chainguard**, enter the options below, save and start/restart
+Install **go2rtc**, enter the options below, save and start/restart
 the app. Changes take effect on the next app restart.
 
 ## Settings
