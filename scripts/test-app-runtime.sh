@@ -23,6 +23,7 @@ await_status() {
   return 1
 }
 for shape in landscape wide portrait; do
+  echo "Testing generated app output: $shape"
   jq --arg path "/$shape" '.camera_path = $path' testdata/hassaddon/options.json > "$task_dir/data/options.json"
   docker run -d --name "$app_name" --network host \
     -v "$task_dir/data:/data:ro" -v "$task_dir/config:/config" "$image" >/dev/null

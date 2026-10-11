@@ -139,7 +139,19 @@ jobs:
             -t 0.1 -c:a aac -f null -
 
       - name: Test generated app pipeline and offline-start recovery
-        run: bash scripts/test-app-runtime.sh go2rtc-chainguard:test
+        shell: bash
+        run: |
+          # Synthetic fixtures contain no real camera credentials. Preserve
+          # diagnostics in the public summary even when a test fails.
+          bash scripts/test-app-runtime.sh go2rtc-chainguard:test >app-runtime.log 2>&1 && result=0 || result=$?
+          cat app-runtime.log
+          {
+            echo '### Generated app runtime test'
+            echo '```text'
+            tail -100 app-runtime.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$result"
 
   publish:
     name: Publish signed multi-architecture image
