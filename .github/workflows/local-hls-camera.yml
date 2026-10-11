@@ -1,0 +1,64 @@
+name: Local HLS Camera tests
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 4 * * 1"
+  push:
+    paths:
+      - "custom_components/local_hls_camera/**"
+      - "tests/local_hls_camera/**"
+      - "requirements-extension-test.txt"
+      - "pyproject.toml"
+      - "hacs.json"
+      - ".github/workflows/local-hls-camera.yml"
+  pull_request:
+    paths:
+      - "custom_components/local_hls_camera/**"
+      - "tests/local_hls_camera/**"
+      - "requirements-extension-test.txt"
+      - "pyproject.toml"
+      - "hacs.json"
+      - ".github/workflows/local-hls-camera.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        ha: [baseline, latest]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+      - name: Install Python 3.14 and test tools
+        run: |
+          python3 -m pip install --user uv==0.12.23
+          ~/.local/bin/uv python install 3.14
+          ~/.local/bin/uv venv --python 3.14 .venv
+          ~/.local/bin/uv pip install --python .venv/bin/python -r requirements-extension-test.txt
+      - name: Install current HA and its Stream dependencies
+        if: matrix.ha == 'latest'
+        run: |
+          ~/.local/bin/uv pip install --python .venv/bin/python --upgrade homeassistant
+          .venv/bin/python -c 'import json, pathlib, homeassistant; p = pathlib.Path(homeassistant.__file__).parent / "components/stream/manifest.json"; print("\n".join(json.loads(p.read_text())["requirements"]))' > stream-requirements.txt
+          ~/.local/bin/uv pip install --python .venv/bin/python -r stream-requirements.txt
+      - name: Install synthetic media fixture encoder
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Set up Go for the isolated synthetic RTSP fixture server
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: "1.27.2"
+          cache: true
+      - name: Build synthetic RTSP fixture server (no container publication)
+        run: go build -buildvcs=false -o /tmp/local-hls-go2rtc .
+      - name: Check code and execute real-media and HA access-control tests
+        env:
+          GO2RTC_TEST_BINARY: /tmp/local-hls-go2rtc
+        run: |
+          .venv/bin/ruff check custom_components tests/local_hls_camera
+          .venv/bin/ruff format --check custom_components tests/local_hls_camera
+          .venv/bin/python -m pytest tests/local_hls_camera -q

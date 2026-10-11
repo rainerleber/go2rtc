@@ -1,0 +1,26 @@
+{
+  "title": "Local HLS Camera",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kompatibilitätskamera hinzufügen",
+        "description": "Wähle eine vorhandene Kamera mit lokalem RTSP-Stream. Zugangsdaten und Kodierung bleiben in der Quell-App. Es entsteht eine separate H.264/AAC-Kamera mit MPEG-TS-HLS; die Quellkamera wird nicht verändert.",
+        "data": {"name": "Name", "source_entity_id": "Quellkamera"}
+      }
+    },
+    "error": {
+      "invalid_source": "Wähle eine vorhandene RTSP-Kamera, keine andere Local HLS Camera.",
+      "source_unavailable": "Die Quellkamera ist nicht verfügbar oder liefert keine lesbare Stream-Adresse."
+    },
+    "abort": {"already_configured": "Diese Quellkamera ist bereits eingerichtet."}
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HLS-Verpackung",
+        "description": "Diese Einstellungen verändern nur die Verpackung, nicht die Kodierung. Stelle kurze Keyframe-Abstände in der Quell-App ein. Vorladen wird über die normale HA-Einstellung der Kamera gesteuert.",
+        "data": {"segment_seconds": "Ziel-Segmentdauer (Sekunden)", "segment_count": "Vorgehaltene Segmente"}
+      }
+    }
+  }
+}

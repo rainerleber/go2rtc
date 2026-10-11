@@ -1,0 +1,9 @@
+# Match the first supported HA release and its own Stream requirements.
+homeassistant==2026.10.1
+av==19.0.0
+numpy==2.3.2
+PyTurboJPEG==1.8.3
+pytest==9.1.1
+pytest-asyncio==1.4.0
+pytest-aiohttp==1.1.1
+ruff==0.17.0

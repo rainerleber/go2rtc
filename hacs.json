@@ -1,0 +1,6 @@
+{
+  "name": "Local HLS Camera",
+  "homeassistant": "2026.10.1",
+  "content_in_root": false,
+  "hide_default_branch": false
+}

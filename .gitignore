@@ -16,4 +16,9 @@ go2rtc_win*
 
 .DS_Store
 
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+
 CLAUDE.md

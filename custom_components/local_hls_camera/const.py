@@ -1,0 +1,16 @@
+"""Limits and configuration for the optional Home Assistant integration."""
+
+DOMAIN = "local_hls_camera"
+CONF_SOURCE_ENTITY = "source_entity_id"
+CONF_SEGMENT_SECONDS = "segment_seconds"
+CONF_SEGMENT_COUNT = "segment_count"
+DEFAULT_SEGMENT_SECONDS = 1
+DEFAULT_SEGMENT_COUNT = 6
+MAX_SEGMENT_BYTES = 4 * 1024 * 1024
+MAX_BUFFER_BYTES = 16 * 1024 * 1024
+MAX_SESSIONS = 8
+SESSION_SECONDS = 600
+STARTUP_SECONDS = 6
+IDLE_SECONDS = 60
+STALE_SECONDS = 5
+IO_TIMEOUT_SECONDS = 5
