@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/apps/configuration
 name: go2rtc Chainguard
-version: "2026.10.25"
+version: "2026.10.26"
 slug: go2rtc_chainguard
 description: Locally rebuilt go2rtc proxy based on signed Chainguard images
 url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
