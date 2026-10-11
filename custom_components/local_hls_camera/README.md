@@ -137,6 +137,14 @@ Alexa startup time. Wider GOPs and extra buffered segments increase latency.
   permissions and path allowlist; this integration does not make recordings.
 - Network open/read timeouts are 5 seconds. Reconnect backoff is 1–15 seconds.
   Stale media is not advertised as a working live stream.
+- Duplicate packets and decode-time regressions of up to 0.5 seconds are
+  discarded per track before muxing, including across segment boundaries.
+  Valid timestamps are preserved; no vendor-specific clock rewrite or second
+  encoder is added. Small audio jitter can therefore cause a brief audio gap,
+  rather than disconnecting the entire video stream. Larger backward resets,
+  forward jumps above 30 seconds, or more than six consecutive packets without
+  timestamps on a track trigger a clean reconnect and HLS discontinuity.
+  These are fixed safety limits, not additional UI settings.
 - Without preload, a worker stops after 60 seconds without playback requests.
   Unloading or stopping HA stops the worker and revokes all playback sessions.
 
@@ -194,6 +202,9 @@ installs anything into a live HA system.
 - A brief `media_io_error` can occur on source interruption; the worker retries
   with bounded backoff. Persistent errors require checking the source app,
   RTSP reachability and the required input codecs/keyframe interval.
+- `timestamp_discontinuity` means the source clock reset or jumped beyond the
+  safety limits; `missing_packet_timestamps` means a track stopped providing
+  usable packet timing. Duplicate/briefly late packets do not require reconnects.
 - A request without valid HA authentication or a valid path signature must
   return HTTP **401**. Expired playback sessions return **410**; stale/not-yet-ready
   media returns **503**. Do not log or share signed playback URLs.
@@ -207,6 +218,15 @@ installs anything into a live HA system.
 - Keep secrets and real camera recordings out of issues, commits and test fixtures.
 
 ## Changelog
+
+### 2026.10.2
+
+- Handle duplicate/late RTSP packets generically before MPEG-TS muxing, avoiding
+  repeated reconnects caused by small audio decode-time regressions.
+- Preserve valid source timing and reconnect on genuine clock discontinuities.
+- Add real PyAV duplicate/regression tests and longer synthetic RTSP coverage.
+- Runtime code changed: install through HACS from GitHub, then restart HA Core
+  once to load the new modules. A config-entry reload alone is not sufficient.
 
 ### 2026.10.1
 

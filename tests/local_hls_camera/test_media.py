@@ -1,7 +1,9 @@
 """Real PyAV/FFmpeg remuxing, standalone segments and bounded playlists."""
 
 import time
+from fractions import Fraction
 from io import BytesIO
+from types import SimpleNamespace
 
 import av
 import pytest
@@ -13,6 +15,7 @@ from custom_components.local_hls_camera.media import (
     MediaInfo,
     Remuxer,
     SegmentRing,
+    TimestampGuard,
     TransportCounters,
     h264_codec_string,
 )
@@ -52,6 +55,91 @@ def test_each_segment_decodes_without_an_initialization_file(synthetic_video):
                 assert pts > last_pts
             last_pts = pts
     assert [s[2] for s in segments] == [True] + [False] * 7
+
+
+@pytest.mark.parametrize("track", ["audio", "video"])
+@pytest.mark.parametrize("offset", [0, -227])
+def test_duplicate_or_late_packets_do_not_interrupt_remux(
+    synthetic_video, track, offset
+):
+    segments = []
+    injected = False
+    with av.open(str(synthetic_video)) as source:
+        remuxer = Remuxer(source, 1, lambda *args: segments.append(args))
+        for packet in source.demux(remuxer.video, remuxer.audio):
+            replay = None
+            if (
+                not injected
+                and packet.size
+                and packet.pts is not None
+                and packet.dts is not None
+                and packet.stream.type == track
+                and packet.pts * packet.time_base > 1.5
+            ):
+                # Preserve the input time base: mux() rebases the original packet.
+                replay = av.Packet(bytes(packet))
+                replay.stream = packet.stream
+                replay.time_base = packet.time_base
+                replay.pts = packet.pts + offset
+                replay.dts = packet.dts + offset
+                replay.duration = packet.duration
+                injected = True
+            remuxer.feed(packet)
+            if replay is not None:
+                remuxer.feed(replay)
+        remuxer.close(publish=True)
+    assert injected
+    assert remuxer.timestamps.dropped_packets == 1
+    assert len(segments) == 8
+    for data, *_ in segments:
+        with av.open(BytesIO(data), format="mpegts") as decoded:
+            frames = list(decoded.decode(video=0))
+            assert len(frames) == 15
+            assert frames[0].key_frame
+        with av.open(BytesIO(data), format="mpegts") as decoded:
+            assert list(decoded.decode(audio=0))
+
+
+def timestamp_packet(index, dts, time_base=Fraction(1, 16000)):
+    return SimpleNamespace(
+        stream=SimpleNamespace(index=index), pts=dts, dts=dts, time_base=time_base
+    )
+
+
+def test_timestamp_guard_uses_per_track_rational_input_times():
+    guard = TimestampGuard()
+    assert guard.accept(timestamp_packet(0, 90000, Fraction(1, 90000)))
+    assert guard.accept(timestamp_packet(1, 16000))
+    # Changing time bases must not make a duplicate look newer.
+    assert not guard.accept(timestamp_packet(1, 90000, Fraction(1, 90000)))
+    assert not guard.accept(timestamp_packet(1, 16000 - 227))
+    assert guard.accept(timestamp_packet(1, 17024))
+    assert guard.accept(timestamp_packet(0, 96000, Fraction(1, 90000)))
+    assert guard.dropped_packets == 2
+
+
+@pytest.mark.parametrize("next_dts", [0, 32 * 16000])
+def test_timestamp_reset_or_large_gap_requests_clean_reconnect(next_dts):
+    guard = TimestampGuard()
+    assert guard.accept(timestamp_packet(1, 16000))
+    with pytest.raises(MediaError, match="^timestamp_discontinuity$"):
+        guard.accept(timestamp_packet(1, next_dts))
+    assert guard.last[1] == 1
+
+
+def test_missing_timestamps_are_bounded_per_track():
+    guard = TimestampGuard()
+    for _ in range(6):
+        assert not guard.accept(timestamp_packet(1, None))
+        assert guard.accept(timestamp_packet(0, _ + 1))
+    with pytest.raises(MediaError, match="^missing_packet_timestamps$"):
+        guard.accept(timestamp_packet(1, None))
+
+
+@pytest.mark.parametrize("time_base", [None, Fraction(0), Fraction(-1)])
+def test_invalid_packet_clock_is_rejected(time_base):
+    with pytest.raises(MediaError, match="^invalid_packet_time_base$"):
+        TimestampGuard().accept(timestamp_packet(1, 10, time_base))
 
 
 def test_transport_continuity_across_segments(synthetic_video):

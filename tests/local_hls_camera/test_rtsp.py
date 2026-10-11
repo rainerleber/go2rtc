@@ -66,11 +66,15 @@ async def test_real_loopback_rtsp_source(hass, synthetic_video):
             await adapter.start()
             await adapter.wait_ready()
             first_sequence = adapter.ring.segments[-1].sequence
-            for _ in range(80):
-                if adapter.ring.segments[-1].sequence > first_sequence:
+            # Cross the eight-second fixture loop and several segment rotations.
+            # A two-segment startup test cannot catch recurring timestamp errors.
+            for _ in range(320):
+                assert adapter.ring.ready
+                assert adapter.last_error is None
+                if adapter.ring.segments[-1].sequence >= first_sequence + 12:
                     break
                 await asyncio.sleep(0.05)
-            assert adapter.ring.segments[-1].sequence > first_sequence
+            assert adapter.ring.segments[-1].sequence >= first_sequence + 12
             segment = adapter.ring.segments[-1]
             with av.open(BytesIO(segment.data), format="mpegts") as decoded:
                 assert decoded.streams.audio[0].codec_context.name == "aac"

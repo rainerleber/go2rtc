@@ -11,12 +11,20 @@ import time
 from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass
+from fractions import Fraction
 from io import BytesIO
 from typing import Any
 
 import av
 
-from .const import MAX_BUFFER_BYTES, MAX_SEGMENT_BYTES, STALE_SECONDS
+from .const import (
+    MAX_BUFFER_BYTES,
+    MAX_MISSING_TIMESTAMPS,
+    MAX_SEGMENT_BYTES,
+    MAX_TIMESTAMP_GAP_SECONDS,
+    MAX_TIMESTAMP_REGRESSION_SECONDS,
+    STALE_SECONDS,
+)
 
 
 class MediaError(Exception):
@@ -171,6 +179,45 @@ class TransportCounters:
         return bytes(result)
 
 
+class TimestampGuard:
+    """Drop duplicate/late packets without rewriting the source's A/V clock.
+
+    Keep input decode times across segment boundaries. PyAV rebases packets
+    during muxing, so compare rational input times before changing their stream.
+    Large discontinuities must reconnect, not silently discard a reset stream.
+    """
+
+    def __init__(self) -> None:
+        self.last: dict[int, Fraction] = {}
+        self.missing: dict[int, int] = {}
+        self.dropped_packets = 0
+
+    def accept(self, packet: Any) -> bool:
+        index = packet.stream.index
+        if packet.pts is None or packet.dts is None:
+            self.missing[index] = self.missing.get(index, 0) + 1
+            if self.missing[index] > MAX_MISSING_TIMESTAMPS:
+                raise MediaError("missing_packet_timestamps")
+            self.dropped_packets += 1
+            return False
+        self.missing[index] = 0
+        if packet.time_base is None or packet.time_base <= 0:
+            raise MediaError("invalid_packet_time_base")
+        timestamp = packet.dts * packet.time_base
+        if (previous := self.last.get(index)) is not None:
+            delta = timestamp - previous
+            if (
+                delta < -MAX_TIMESTAMP_REGRESSION_SECONDS
+                or delta > MAX_TIMESTAMP_GAP_SECONDS
+            ):
+                raise MediaError("timestamp_discontinuity")
+            if delta <= 0:
+                self.dropped_packets += 1
+                return False
+        self.last[index] = timestamp
+        return True
+
+
 class Remuxer:
     """Copy compressed packets; close and publish only complete keyframe GOPs."""
 
@@ -200,6 +247,7 @@ class Remuxer:
         self.max_duration = math.ceil(segment_seconds) + 0.49
         self.publish = publish
         self.counters = TransportCounters()
+        self.timestamps = TimestampGuard()
         self.output: Any = None
         self.buffer: LimitedBuffer | None = None
         self.mapping: dict[int, Any] = {}
@@ -245,10 +293,12 @@ class Remuxer:
             self.buffer = None
 
     def feed(self, packet: Any) -> None:
-        if not packet.size or packet.pts is None:
+        if not packet.size:
             return
         source_index = packet.stream.index
         if source_index not in (self.video.index, self.audio.index):
+            return
+        if not self.timestamps.accept(packet):
             return
         if source_index == self.video.index:
             pts = float(packet.pts * packet.time_base)
