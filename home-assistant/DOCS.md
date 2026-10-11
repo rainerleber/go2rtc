@@ -4,7 +4,7 @@
 
 This app accepts **one vendor-independent RTSP camera** and exposes two local
 streams: the original source and a compatibility output. In `h264_aac` mode,
-FFmpeg reads the shared local source, converts video to H.264 Main/Level 4.1
+FFmpeg reads the shared local source, converts video to H.264 Main
 and available audio to AAC, and preserves the image aspect ratio with black padding.
 It handles 4:3, 16:9 and portrait images without vendor-specific geometry.
 Video is mapped explicitly so incomplete startup metadata cannot silently select
@@ -19,6 +19,11 @@ frame and HLS segment boundaries. A `superfast`, `zerolatency` encoder with no
 B-frames avoids frame reordering. Local FFmpeg input probing is bounded to
 250 ms / 256 KiB. These settings improve startup but cannot eliminate Echo
 Show, network, or Home Assistant HLS buffering.
+
+The H.264 level is selected from the output geometry and frame rate: Level 3.1
+for at most 3600 macroblocks / 108000 macroblocks per second (including 720p30),
+otherwise Level 4.0 (up to the supported 1080p30). This avoids unnecessarily
+requiring a Level 4.1 decoder. Dimensions are rounded up to 16x16 macroblocks.
 
 With `preload: true`, the output remains connected even with no viewers.
 This consumes continuous camera bandwidth and, when transcoding, CPU.
@@ -94,6 +99,8 @@ For the current HA Alexa HLS descriptor, 1280x720 H.264/AAC matches the advertis
 format. Compatibility is not a guarantee that every Echo firmware will play it;
 test on the actual device. See the
 [HA camera-stream issue](https://github.com/home-assistant/core/issues/172245).
+Amazon documents a maximum H.264 Level 4 for the listed Echo Show 15/21 models;
+see [Echo Show codec specifications](https://developer.amazon.com/docs/device-specs/device-specifications-echo-show.html).
 
 ## Local camera accounts, including Reolink
 

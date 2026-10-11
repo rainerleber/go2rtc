@@ -2,6 +2,9 @@
 
 ## Next
 
+- Select H.264 Level 3.1 for 720p and Level 4.0 for larger validated outputs
+  instead of unnecessarily requiring a Level 4.1 decoder.
+
 - Require an explicit video track instead of silently accepting FFmpeg's
   audio-only automatic selection; audio remains optional for silent cameras.
 - Make runtime capture deterministic with explicit tracks, sufficient probe

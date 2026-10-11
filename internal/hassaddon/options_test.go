@@ -98,6 +98,29 @@ func TestBuildConfigGeneric(t *testing.T) {
 		t.Fatal("generic scaling missing")
 	}
 }
+
+func TestH264LevelMatchesValidatedOutput(t *testing.T) {
+	for _, tc := range []struct {
+		width, height, fps int
+		level              string
+	}{
+		{640, 480, 30, "3.1"},
+		{1280, 720, 15, "3.1"},
+		{1280, 720, 30, "3.1"},
+		{1280, 722, 30, "4.0"},
+		{1920, 1080, 30, "4.0"},
+	} {
+		o := options{VideoWidth: tc.width, VideoHeight: tc.height, VideoFPS: tc.fps}
+		if got := o.h264Level(); got != tc.level {
+			t.Errorf("%dx%d@%d: level %s, want %s", tc.width, tc.height, tc.fps, got, tc.level)
+		}
+	}
+	c := generate(t, `{"camera_address":"camera.test","camera_path":"/live"}`)
+	if !strings.Contains(c.FFmpeg["h264"], "-level:v 3.1") {
+		t.Fatal("default 720p output must not require a Level 4.1 decoder")
+	}
+}
+
 func TestBuildConfigPassthrough(t *testing.T) {
 	c := generate(t, `{"camera_address":"camera.test","camera_path":"/live","output_mode":"passthrough","preload":false}`)
 	if len(c.FFmpeg) != 0 || len(c.Preload) != 0 || c.Streams["camera_compatible"][0] != "rtsp://127.0.0.1:8554/camera" {
