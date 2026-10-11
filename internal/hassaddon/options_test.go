@@ -25,7 +25,7 @@ func TestBuildConfig(t *testing.T) {
 	if !strings.Contains(string(config), "ffmpeg:reolink_haustuer#video=h264#audio=aac") {
 		t.Fatalf("Alexa stream must transcode from the shared local proxy: %s", config)
 	}
-	if !strings.Contains(string(config), `"reolink_haustuer_alexa": "video&audio"`) {
+	if !strings.Contains(string(config), `"reolink_haustuer_alexa": "video\u0026audio"`) {
 		t.Fatalf("Alexa stream must be preloaded for the Echo timeout: %s", config)
 	}
 }
