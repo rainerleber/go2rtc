@@ -35,10 +35,12 @@ for shape in landscape wide portrait; do
       "$image" -config /source.json >/dev/null
   fi
   await_status active
-  docker run --rm --network host -v "$task_dir/results:/results" \
+  # Capture a fixed number of video frames. A wall-clock -t cutoff is flaky
+  # when audio starts before the first decodable RTSP video keyframe.
+  timeout 30s docker run --rm --network host -v "$task_dir/results:/results" \
     --entrypoint /usr/bin/ffmpeg "$image" -hide_banner -loglevel error \
     -rtsp_transport tcp -analyzeduration 250000 -probesize 262144 \
-    -i rtsp://127.0.0.1:8554/test_output -t 3 -c copy -y "/results/$shape.mkv"
+    -i rtsp://127.0.0.1:8554/test_output -frames:v 60 -c copy -y "/results/$shape.mkv"
   docker run --rm -v "$task_dir/results:/results:ro" \
     --entrypoint /usr/bin/ffprobe "$image" -v error -show_streams -show_frames \
     -of json "/results/$shape.mkv" > "$task_dir/results/$shape.json"
