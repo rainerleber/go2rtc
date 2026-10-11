@@ -9,6 +9,7 @@ import (
 )
 
 func TestRecursion(t *testing.T) {
+	t.Cleanup(func() { Delete("from_yaml"); Delete("rtsp://localhost:8554/from_yaml?video") })
 	HandleFunc("test", func(string) (core.Producer, error) { return nil, nil })
 	// create stream with some source
 	stream1, err := New("from_yaml", "test:does_not_matter")
@@ -29,6 +30,7 @@ func TestRecursion(t *testing.T) {
 }
 
 func TestTempate(t *testing.T) {
+	t.Cleanup(func() { Delete("camera.from_hass") })
 	HandleFunc("rtsp", func(url string) (core.Producer, error) { return nil, nil }) // bypass HasProducer
 	HandleFunc("ffmpeg", func(url string) (core.Producer, error) { return nil, nil })
 

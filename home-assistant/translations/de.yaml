@@ -1,13 +1,46 @@
 configuration:
   camera_address:
-    name: Kamera-Adresse
-    description: Hostname oder IP-Adresse der Reolink-Kamera, ohne Protokoll oder Pfad.
+    name: "Kamera-Adresse"
+    description: "Hostname oder IP der RTSP-Kamera, ohne Protokoll, Port oder Pfad."
+  camera_port:
+    name: "RTSP-Port"
+    description: "RTSP-Port der Kamera, meist 554."
+  camera_path:
+    name: "RTSP-Pfad"
+    description: "Herstellerspezifischer Pfad, z. B. /stream1 oder /h264Preview_01_sub. Abfrageparameter sind erlaubt."
   camera_username:
-    name: Kamera-Benutzer
-    description: Separater Reolink-Benutzer nur mit Live-Ansichtsrecht.
+    name: "Kamera-Benutzer"
+    description: "Vorhandener lokaler Kamera-Benutzer. Ein separater Nicht-Admin ist empfohlen, aber nicht erforderlich."
   camera_password:
-    name: Kamera-Passwort
-    description: Passwort des separaten Reolink-Benutzers. Das Feld wird in der Oberfläche maskiert.
+    name: "Kamera-Passwort"
+    description: "Lokales Kamera-Passwort. Maskiert; vertrauenswürdige Home-Assistant-Admins können es auslesen."
+  source_name:
+    name: "Quellstream-Name"
+    description: "Name des originalen lokalen RTSP-Streams. Bereits verwendete Namen beibehalten."
+  output_name:
+    name: "Ausgabestream-Name"
+    description: "Name des kompatiblen Streams. Muss sich vom Quellstream-Namen unterscheiden."
+  output_mode:
+    name: "Ausgabemodus"
+    description: "h264_aac normalisiert das Video; passthrough verwendet keinen Encoder und behält die Codecs bei."
+  preload:
+    name: "Stream warm halten"
+    description: "Dauerhafte Kameraverbindung und Encoder-CPU-Nutzung; verkürzt den Kaltstart."
+  video_width:
+    name: "Ausgabebreite"
+    description: "Gerade Pixelzahl. Skalierung erhält das Seitenverhältnis und ergänzt schwarze Ränder."
+  video_height:
+    name: "Ausgabehöhe"
+    description: "Gerade Pixelzahl. 1280x720 ist das voreingestellte Kompatibilitätsformat."
+  video_fps:
+    name: "Ausgabe-Bildrate"
+    description: "Bilder pro Sekunde, 1–30. Niedrigere Werte senken die CPU-Last."
+  keyframe_seconds:
+    name: "Schlüsselbildabstand"
+    description: "Sekunden zwischen Schlüsselbildern, 1–5. Eine Sekunde ist für schnellen Start empfohlen."
+  video_bitrate_kbps:
+    name: "Video-Bitrate"
+    description: "Ziel-/Maximalwert in kbit/s, 128–8000. Nur für normalisierte Ausgabe."
   camera_stream:
-    name: Quellstream
-    description: Der Substream startet auf einem Echo Show in der Regel schneller.
+    name: "Alter Reolink-Quellstream"
+    description: "Nur zur Migration. Wird bei explizitem RTSP-Pfad ignoriert."

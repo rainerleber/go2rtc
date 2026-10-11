@@ -1,0 +1,16 @@
+{
+  "camera_address": "127.0.0.1",
+  "camera_port": 18554,
+  "camera_path": "/landscape",
+  "camera_username": "",
+  "camera_password": "",
+  "source_name": "test_source",
+  "output_name": "test_output",
+  "output_mode": "h264_aac",
+  "preload": true,
+  "video_width": 1280,
+  "video_height": 720,
+  "video_fps": 15,
+  "keyframe_seconds": 1,
+  "video_bitrate_kbps": 1500
+}

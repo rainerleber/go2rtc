@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/url"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -15,15 +17,28 @@ const (
 	configPath  = "/config/go2rtc.yaml"
 )
 
+// Structured RTSP options deliberately exclude executable URLs and raw FFmpeg arguments.
 type options struct {
 	CameraAddress  string `json:"camera_address"`
+	CameraPort     int    `json:"camera_port"`
+	CameraPath     string `json:"camera_path"`
 	CameraUsername string `json:"camera_username"`
 	CameraPassword string `json:"camera_password"`
-	CameraStream   string `json:"camera_stream"`
+	SourceName     string `json:"source_name"`
+	OutputName     string `json:"output_name"`
+	OutputMode     string `json:"output_mode"`
+	Preload        *bool  `json:"preload"`
+	VideoWidth     int    `json:"video_width"`
+	VideoHeight    int    `json:"video_height"`
+	VideoFPS       int    `json:"video_fps"`
+	KeyframeSecs   int    `json:"keyframe_seconds"`
+	VideoBitrate   int    `json:"video_bitrate_kbps"`
+	CameraStream   string `json:"camera_stream"` // legacy migration only
 }
 
-// Prepare creates the app-private go2rtc configuration from Supervisor options.
-// Outside a Home Assistant app it is a no-op.
+var streamName = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// Prepare creates the app-private configuration; outside an HA app it is a no-op.
 func Prepare() error {
 	b, err := os.ReadFile(optionsPath)
 	if errors.Is(err, os.ErrNotExist) {
@@ -32,7 +47,6 @@ func Prepare() error {
 	if err != nil {
 		return errors.New("cannot read private app options")
 	}
-
 	config, err := buildConfig(b)
 	if err != nil {
 		return err
@@ -40,50 +54,125 @@ func Prepare() error {
 	if err = os.WriteFile(configPath, config, 0600); err != nil {
 		return errors.New("cannot write private configuration")
 	}
+	if err = os.Chmod(configPath, 0600); err != nil {
+		return errors.New("cannot restrict private configuration permissions")
+	}
 	return nil
 }
-
 func buildConfig(b []byte) ([]byte, error) {
-	var opts options
-	if err := json.Unmarshal(b, &opts); err != nil {
+	var o options
+	if err := json.Unmarshal(b, &o); err != nil {
 		return nil, errors.New("invalid private app options")
 	}
-	if opts.CameraAddress == "" || opts.CameraUsername == "" || opts.CameraPassword == "" {
-		return nil, errors.New("camera_address, camera_username and camera_password are required")
+	if err := o.defaults(); err != nil {
+		return nil, err
 	}
-	if strings.ContainsAny(opts.CameraAddress, "/@") {
-		return nil, errors.New("camera_address must be a hostname or IP address without a scheme or path")
+	if err := o.validate(); err != nil {
+		return nil, err
 	}
-
-	var suffix string
-	switch opts.CameraStream {
-	case "main", "sub", "ext":
-		suffix = opts.CameraStream
-	default:
-		return nil, errors.New("camera_stream must be main, sub or ext")
-	}
-
-	cameraURL := &url.URL{
-		Scheme: "rtsp",
-		User:   url.UserPassword(opts.CameraUsername, opts.CameraPassword),
-		Host:   net.JoinHostPort(opts.CameraAddress, "554"),
-		Path:   fmt.Sprintf("/h264Preview_01_%s", suffix),
+	path, _ := url.Parse(o.CameraPath)
+	u := &url.URL{Scheme: "rtsp", Host: net.JoinHostPort(o.CameraAddress, strconv.Itoa(o.CameraPort)), Path: path.Path, RawPath: path.RawPath, RawQuery: path.RawQuery}
+	if o.CameraUsername != "" {
+		u.User = url.UserPassword(o.CameraUsername, o.CameraPassword)
 	}
 	config := map[string]any{
-		"app":     map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
-		"api":     map[string]string{"listen": "127.0.0.1:1984"},
-		"preload": map[string]string{"reolink_haustuer_alexa": "video&audio"},
-		"rtsp":    map[string]string{"listen": "127.0.0.1:8554"},
-		"webrtc":  map[string]string{"listen": ""},
-		"streams": map[string][]string{
-			"reolink_haustuer":       {cameraURL.String()},
-			"reolink_haustuer_alexa": {"ffmpeg:reolink_haustuer#video=h264#audio=aac#raw=-vf scale=960:720,pad=1280:720:160:0:black"},
-		},
+		"app":    map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
+		"api":    map[string]string{"listen": "127.0.0.1:1984"},
+		"rtsp":   map[string]string{"listen": "127.0.0.1:8554"},
+		"webrtc": map[string]string{"listen": ""},
 	}
-
+	stream := "rtsp://127.0.0.1:8554/" + o.SourceName
+	if o.OutputMode == "h264_aac" {
+		gop := o.VideoFPS * o.KeyframeSecs
+		// FFmpeg connects to the local shared source, keeping camera credentials out of its argv.
+		config["ffmpeg"] = map[string]string{
+			"app_rtsp":  "-fflags nobuffer -flags low_delay -analyzeduration 250000 -probesize 262144 -timeout {timeout} -rtsp_transport tcp -i {input}",
+			"h264":      fmt.Sprintf("-c:v libx264 -profile:v main -level:v 4.1 -preset:v superfast -tune:v zerolatency -pix_fmt:v yuv420p -bf 0 -r:v %d -g:v %d -keyint_min:v %d -sc_threshold:v 0 -b:v %dk -maxrate:v %dk -bufsize:v %dk", o.VideoFPS, gop, gop, o.VideoBitrate, o.VideoBitrate, o.VideoBitrate),
+			"app_scale": fmt.Sprintf(`-vf "scale=%d:%d:force_original_aspect_ratio=decrease:force_divisible_by=2,pad=%d:%d:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1"`, o.VideoWidth, o.VideoHeight, o.VideoWidth, o.VideoHeight),
+		}
+		stream = "ffmpeg:" + o.SourceName + "#input=app_rtsp#video=h264#audio=aac#raw=app_scale"
+	}
+	config["streams"] = map[string][]string{o.SourceName: {u.String()}, o.OutputName: {stream}}
+	if o.Preload == nil || *o.Preload {
+		config["preload"] = map[string]string{o.OutputName: "video&audio"}
+	}
 	out, err := json.MarshalIndent(config, "", "  ")
 	if err != nil {
 		return nil, errors.New("cannot generate private configuration")
 	}
 	return append(out, '\n'), nil
+}
+func (o *options) defaults() error {
+	// Isolated compatibility migration keeps existing HA URLs intact.
+	if o.CameraPath == "" && o.CameraStream != "" {
+		switch o.CameraStream {
+		case "main", "sub", "ext":
+			o.CameraPath = "/h264Preview_01_" + o.CameraStream
+		default:
+			return errors.New("legacy camera_stream must be main, sub or ext")
+		}
+		if o.SourceName == "" {
+			o.SourceName = "reolink_haustuer"
+		}
+		if o.OutputName == "" {
+			o.OutputName = "reolink_haustuer_alexa"
+		}
+	}
+	if o.SourceName == "" {
+		o.SourceName = "camera"
+	}
+	if o.OutputName == "" {
+		o.OutputName = "camera_compatible"
+	}
+	if o.OutputMode == "" {
+		o.OutputMode = "h264_aac"
+	}
+	if o.CameraPort == 0 {
+		o.CameraPort = 554
+	}
+	if o.VideoWidth == 0 {
+		o.VideoWidth = 1280
+	}
+	if o.VideoHeight == 0 {
+		o.VideoHeight = 720
+	}
+	if o.VideoFPS == 0 {
+		o.VideoFPS = 15
+	}
+	if o.KeyframeSecs == 0 {
+		o.KeyframeSecs = 1
+	}
+	if o.VideoBitrate == 0 {
+		o.VideoBitrate = 1500
+	}
+	return nil
+}
+func (o options) validate() error {
+	// Errors must never contain option values: even paths may contain query secrets.
+	if o.CameraAddress == "" || strings.ContainsAny(o.CameraAddress, "/@?#\\ \t\r\n\"'") || (strings.Contains(o.CameraAddress, ":") && net.ParseIP(o.CameraAddress) == nil) {
+		return errors.New("camera_address must be a bare hostname or IP address")
+	}
+	if o.CameraPort < 1 || o.CameraPort > 65535 {
+		return errors.New("camera_port must be 1..65535")
+	}
+	p, err := url.Parse(o.CameraPath)
+	if err != nil || !strings.HasPrefix(o.CameraPath, "/") || strings.HasPrefix(o.CameraPath, "//") || p.IsAbs() || p.Host != "" || p.Fragment != "" || strings.ContainsAny(o.CameraPath, "\r\n") {
+		return errors.New("camera_path must be an absolute RTSP path with optional query, not a URL")
+	}
+	if o.CameraPassword != "" && o.CameraUsername == "" {
+		return errors.New("camera_password requires camera_username")
+	}
+	if !streamName.MatchString(o.SourceName) || !streamName.MatchString(o.OutputName) || o.SourceName == o.OutputName {
+		return errors.New("source_name and output_name must be distinct names using letters, digits, underscore or hyphen")
+	}
+	if o.OutputMode != "h264_aac" && o.OutputMode != "passthrough" {
+		return errors.New("output_mode must be h264_aac or passthrough")
+	}
+	if o.VideoWidth < 160 || o.VideoWidth > 1920 || o.VideoHeight < 120 || o.VideoHeight > 1080 || o.VideoWidth%2 != 0 || o.VideoHeight%2 != 0 {
+		return errors.New("video dimensions must be even and within 160x120..1920x1080")
+	}
+	if o.VideoFPS < 1 || o.VideoFPS > 30 || o.KeyframeSecs < 1 || o.KeyframeSecs > 5 || o.VideoBitrate < 128 || o.VideoBitrate > 8000 {
+		return errors.New("video_fps, keyframe_seconds or video_bitrate_kbps is outside its supported range")
+	}
+	return nil
 }

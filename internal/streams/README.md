@@ -68,6 +68,12 @@ streams:
 
 You can preload any stream on go2rtc start. This is useful for cameras that take a long time to start up.
 
+Preload connections are asynchronous and independent. A source unavailable at
+startup retries with exponential delays from one to thirty seconds. The local
+`/api/preload` endpoint reports `starting`, `retrying` or `active`; an accepted
+PUT registers intent rather than guaranteeing immediate frames. DELETE cancels
+pending retries. Once attached, normal producer reconnection handles outages.
+
 ```yaml
 preload:
   camera1:                                     # default: video&audio = ANY

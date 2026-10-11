@@ -4,10 +4,12 @@ This fork packages [go2rtc](https://github.com/AlexxIT/go2rtc) as a small,
 independent Home Assistant app. It does not require the upstream app catalog
 and does not consume the upstream container image.
 
-The fork exists for one concrete local use case: normalize a Reolink doorbell
-RTSP stream to H.264/AAC in a preloaded 1280x720 frame that Alexa/Echo Show can consume. The
-go2rtc source remains broadly compatible with upstream so security and protocol
-updates can still be reviewed and merged.
+The app accepts vendor-independent RTSP cameras and either relays their stream
+unchanged or produces a warm H.264/AAC compatibility stream. Structured settings
+control names, resolution, frame rate, bitrate and keyframe spacing. Scaling
+preserves the source aspect ratio, including portrait doorbells. No Reolink
+cloud or browser workaround is required. The original go2rtc protocol modules
+remain available when the binary is used outside the Home Assistant app.
 
 ## Install in Home Assistant
 
@@ -17,8 +19,9 @@ Add this repository under **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Chainguard**, create its `go2rtc.yaml`, and only then start the
-app. The complete loopback-only Reolink example is in
+Install **go2rtc Chainguard**, enter the camera settings on its Configuration
+tab, and start it. No manual YAML file is needed. Functionality, all options,
+latency tradeoffs and vendor-specific examples are documented in
 [`home-assistant/DOCS.md`](home-assistant/DOCS.md).
 
 The published image is:
@@ -41,7 +44,7 @@ build and release workflow. It:
 - installs Wolfi's APK-signed FFmpeg 9 package;
 - verifies `libx264` and AAC and performs real H.264 scale/pad and AAC
   transcodes matching the Alexa stream;
-- publishes `amd64` and `arm64` images with immutable `YYYY.MM.DD.RUN` tags;
+- publishes `amd64` and `arm64` images with immutable `YYYY.MM.BUILD` CalVer tags;
 - emits an SBOM and provenance and keylessly signs the resulting manifest; and
 - rebuilds every Monday to consume current Chainguard and Wolfi security fixes.
 
@@ -54,11 +57,14 @@ publish job.
 The Home Assistant app gets host networking and its own configuration directory
 only. It has no Supervisor token, Home Assistant configuration mount, device
 access, or privileged mode. The recommended configuration binds its API and
-RTSP listener to loopback and disables WebRTC.
+RTSP listener to loopback and disables WebRTC. This is enforced by the app's
+generated configuration.
 
 go2rtc can launch FFmpeg, and camera URLs contain credentials. Do not expose its
-API or RTSP port to an untrusted network. Use a dedicated camera account with
-live-view permission only and keep `go2rtc.yaml` and logs private.
+API or RTSP port to an untrusted network. Use the least-privileged local camera
+account supported by your device and keep generated configuration and logs private.
+An additional account is optional; it isolates credentials from the camera's
+administrator account, but its actual permissions depend on the firmware.
 
 The go2rtc program is MIT-licensed. Wolfi's FFmpeg package includes GPL media
 components such as x264; exact package versions and licenses are recorded in the

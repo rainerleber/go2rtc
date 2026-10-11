@@ -1,13 +1,46 @@
 configuration:
   camera_address:
-    name: Camera address
-    description: Hostname or IP address of the Reolink camera, without a protocol or path.
+    name: "Camera address"
+    description: "Bare RTSP camera hostname or IP; no protocol, port or path."
+  camera_port:
+    name: "RTSP port"
+    description: "RTSP port, usually 554."
+  camera_path:
+    name: "RTSP path"
+    description: "Manufacturer-specific path, e.g. /stream1 or /h264Preview_01_sub. Optional query allowed."
   camera_username:
-    name: Camera username
-    description: Dedicated Reolink user with live-view permission only.
+    name: "Camera username"
+    description: "Existing local camera account. A dedicated non-admin account is recommended, not required."
   camera_password:
-    name: Camera password
-    description: Password for the dedicated Reolink user. The field is masked in the UI.
+    name: "Camera password"
+    description: "Local camera password. Masked, but trusted Home Assistant administrators can access it."
+  source_name:
+    name: "Source stream name"
+    description: "Original local RTSP stream name. Preserve names already used by Home Assistant."
+  output_name:
+    name: "Output stream name"
+    description: "Compatibility stream name. Must differ from the source name."
+  output_mode:
+    name: "Output mode"
+    description: "h264_aac normalizes the stream; passthrough uses no encoder and preserves original codecs."
+  preload:
+    name: "Keep stream warm"
+    description: "Continuous camera connection and encoder CPU usage; reduces cold-start latency."
+  video_width:
+    name: "Output width"
+    description: "Even width in pixels. Scaling preserves aspect ratio and pads with black."
+  video_height:
+    name: "Output height"
+    description: "Even height in pixels. 1280x720 is the default compatibility frame."
+  video_fps:
+    name: "Output frame rate"
+    description: "Frames per second, 1–30. Lower values reduce CPU load."
+  keyframe_seconds:
+    name: "Keyframe interval"
+    description: "Seconds between keyframes, 1–5. One second is recommended for startup speed."
+  video_bitrate_kbps:
+    name: "Video bitrate"
+    description: "Target/maximum kbit/s, 128–8000. Applies only to normalized output."
   camera_stream:
-    name: Source stream
-    description: Use the sub stream for faster startup on an Echo Show.
+    name: "Legacy Reolink stream"
+    description: "Migration only. Ignored when an explicit RTSP path is set."

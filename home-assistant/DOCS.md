@@ -1,5 +1,29 @@
 # Home Assistant app: go2rtc Chainguard
 
+## Function
+
+This app accepts **one vendor-independent RTSP camera** and exposes two local
+streams: the original source and a compatibility output. In `h264_aac` mode,
+FFmpeg reads the shared local source, converts video to H.264 Main/Level 4.1
+and audio to AAC, and preserves the image aspect ratio with black padding.
+It handles 4:3, 16:9 and portrait images without vendor-specific geometry.
+No raw shell/FFmpeg settings, cloud camera account, or browser workaround is needed.
+For multiple cameras or other protocols, use the regular go2rtc binary with
+its native configuration; this app intentionally keeps its UI focused.
+
+The compatibility output defaults to 1280x720 at 15 fps, 1500 kbit/s and one
+keyframe per second. Short keyframe spacing reduces the wait for a decodable
+frame and HLS segment boundaries. A `superfast`, `zerolatency` encoder with no
+B-frames avoids frame reordering. Local FFmpeg input probing is bounded to
+250 ms / 256 KiB. These settings improve startup but cannot eliminate Echo
+Show, network, or Home Assistant HLS buffering.
+
+With `preload: true`, the output remains connected even with no viewers.
+This consumes continuous camera bandwidth and, when transcoding, CPU.
+Unavailable sources retry independently after 1, 2, 4, 8, 16, then 30 seconds
+(maximum); an offline camera at boot no longer permanently disables preloading.
+Once connected, the normal producer reconnection mechanism handles outages.
+
 ## Installation
 
 Add this repository to **Settings → Apps → App store → Repositories**:
@@ -8,45 +32,121 @@ Add this repository to **Settings → Apps → App store → Repositories**:
 https://github.com/rainerleber/go2rtc
 ```
 
-Install **go2rtc Chainguard** and enter these settings on the Configuration tab:
+Install **go2rtc Chainguard**, enter the options below, save and start/restart
+the app. Changes take effect on the next app restart.
 
-- **Camera address:** Reolink hostname or IP address, without `rtsp://` or a path
-- **Camera username:** a dedicated Reolink live-view-only user
-- **Camera password:** the password for that user
-- **Source stream:** `sub` is recommended for fast startup on an Echo Show
+## Settings
 
-The app generates `/config/go2rtc.yaml` in its private configuration directory
-with mode 0600. Its API and RTSP listeners are fixed to loopback, WebRTC is
-disabled, and the Alexa-compatible stream is transcoded automatically.
-The transcoded stream stays preloaded because Echo Show accepts only a short
-startup delay. This uses continuous CPU while keeping camera credentials and
-all listeners local to the app.
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `camera_address` | empty; required | Bare camera hostname, IPv4 or IPv6 address; no protocol/port/path. |
+| `camera_port` | 554 | RTSP port, 1–65535. |
+| `camera_path` | /stream1 | Camera-specific absolute RTSP path, optionally including a query. No full URL or fragment. |
+| `camera_username` | empty | Existing **local camera** account; empty only for an intentionally unauthenticated source. |
+| `camera_password` | empty | Masked password; requires a username when nonempty. |
+| `source_name` | camera | Original local stream name. Letters, digits, underscore/hyphen, maximum 64 characters. |
+| `output_name` | camera_compatible | Output stream name; must differ from source name. |
+| `output_mode` | h264_aac | Normalize to H.264/AAC. `passthrough` relays unchanged and does not launch FFmpeg. |
+| `preload` | true | Keep output warm; false saves resources but increases cold-start latency. |
+| `video_width` | 1280 | Even output width, 160–1920 pixels. |
+| `video_height` | 720 | Even output height, 120–1080 pixels. |
+| `video_fps` | 15 | Output frame rate, 1–30 fps. |
+| `keyframe_seconds` | 1 | Keyframe interval, 1–5 seconds. GOP = fps × interval. |
+| `video_bitrate_kbps` | 1500 | Target/maximum video bitrate, 128–8000 kbit/s; one-second encoder buffer. |
+| `camera_stream` | legacy only | Old Reolink main/sub/ext selection, used only when camera_path is absent/empty. |
 
-The corresponding Home Assistant Generic Camera stream source is:
+Video settings apply only to `h264_aac`. Passthrough cannot repair incompatible
+codecs, profile, resolution or long camera keyframe intervals. With normalization,
+use a lower-resolution camera substream to reduce decoding cost; upscaling does
+not create detail. CPU cost rises with source/output resolution and fps.
+
+Examples of **paths**, not credentials:
+
+- Reolink: `/h264Preview_01_sub` (main/ext may be available).
+- Cameras using a conventional first stream: `/stream1`.
+- Other devices: use the RTSP path documented by their manufacturer.
+
+Existing four-field app configurations migrate automatically: their Reolink
+path and `reolink_haustuer` / `reolink_haustuer_alexa` names are retained.
+New installations use generic names. When explicitly switching to the new
+fields, enter both desired names to preserve existing consumers.
+Do not rename stream names without updating their Home Assistant camera URLs.
+
+## Home Assistant and Alexa
+
+Create/configure a **Generic Camera** in Settings → Devices & services with:
 
 ```text
-rtsp://127.0.0.1:8554/reolink_haustuer_alexa
+rtsp://127.0.0.1:8554/camera_compatible
 ```
 
-Expose only that Generic Camera entity to Alexa.
+Use your chosen output_name instead of camera_compatible, RTSP transport TCP,
+and no camera username/password on this loopback connection. In that camera
+entity's settings enable **Preload stream** as well. The app keeps RTSP/FFmpeg
+warm; Home Assistant's separate preference keeps the HLS producer warm.
+Expose only this Generic Camera entity to Alexa and use its Alexa name.
 
-## Security notes
+For the current HA Alexa HLS descriptor, 1280x720 H.264/AAC matches the advertised
+format. Compatibility is not a guarantee that every Echo firmware will play it;
+test on the actual device. See the
+[HA camera-stream issue](https://github.com/home-assistant/core/issues/172245).
 
-- Use a dedicated Reolink account with live-view permission only.
-- The password field is masked in the UI. Home Assistant administrators remain
-  a trust boundary because the Supervisor and the app must provide the secret
-  to the camera connection.
-- The app has no access to Home Assistant's configuration or Supervisor API.
-- API and RTSP listeners are fixed to `127.0.0.1` and no ports are forwarded.
-- The image runs without privileged mode and has no host filesystem access.
-- The runtime contains go2rtc and Wolfi's FFmpeg 9 package. It does not include
-  Python or hardware acceleration; Wolfi Base does include BusyBox and APK.
+## Local camera accounts, including Reolink
+
+RTSP authentication needs a camera credential when the source requires it.
+A **new** user is not technically required: an existing account works. A dedicated
+non-admin user is recommended to avoid granting camera administration to the app.
+It is stored **on the camera**, not in HA, Alexa or a Reolink cloud account.
+
+Reolink distinguishes older local User Management and newer Advanced Share UI.
+For supported older devices, sign in as the original admin and open:
+
+- Reolink App: Device settings → Advanced → User Management.
+- Reolink desktop Client or local camera web UI: Device settings → System → User Management.
+
+Newer firmware may instead show Share Device / Advanced Share. Do not assume
+a cloud-sharing authorization code is an RTSP username/password. Check the
+device-specific local stream authentication support.
+
+Reolink's normal User role is **not strictly live-view-only**: playback and
+other preview-page features may also be available. The app requires no admin
+API permission and uses RTSP only, but that does not narrow the account's own
+firmware permissions. See Reolink's
+[account management](https://support.reolink.com/articles/360011355734-How-to-Add-Admin-User-Accounts-to-Reolink-Cameras/)
+and [role comparison](https://support.reolink.com/articles/900000605423-Introduction-to-Admin-Account-and-User-Account/).
+No new user is created by this app, and usernames/passwords do not change latency.
+
+## Security and diagnostics
+
+- Supervisor options generate private `/config/go2rtc.yaml` with mode 0600.
+  This is JSON-compatible YAML; do not edit it manually because restart overwrites it.
+- Password masking is not encryption. HA/Supervisor administrators and the app
+  are trusted; they can access the credential required to connect.
+- API and RTSP are enforced on `127.0.0.1:1984` and `127.0.0.1:8554`.
+  No LAN ports or WebRTC listener are enabled. Other host-network processes remain
+  part of this trust boundary.
+- The app gets only its own configuration directory and host networking:
+  no Supervisor/HA token, HA config mount, devices or privileged mode.
+- Camera credentials are URL-escaped and stay out of FFmpeg command-line arguments.
+  Configuration and logs should nevertheless be treated as sensitive.
+- Runtime includes Wolfi FFmpeg 9, BusyBox and APK; no Python or hardware acceleration.
+
+For administrators diagnosing on the HA host, `GET /api/preload` on the local
+API reports `starting`, `retrying` or `active`. PUT requests register preload
+intent asynchronously; success means accepted, not that a first frame arrived.
+`active` means a consumer attached; it is not a continuous frame-freshness check.
+Deleting/replacing a preload cancels pending retries and removes its consumer.
+Do not expose the API merely to inspect it.
+
+Measure both cold and warm **first decoded frame**, not just ffprobe's execution
+time (which includes probing). An RTSP measurement does not equal Alexa screen
+latency. Check source reachability/authentication, preload status, CPU and HA
+HLS logs before increasing privileges or changing firewall rules.
 
 ## Updates and rollback
 
 The image is rebuilt weekly and after relevant source changes. The workflow
 publishes immutable `YYYY.MM.BUILD` CalVer tags and updates this app's version
 only after the multi-architecture image was pushed successfully.
-
-To roll back, select an earlier commit of this repository as an App Store
-repository branch, or restore the app from a Home Assistant backup.
+Take an app backup before updating. To roll back, restore that app backup or
+use an explicitly selected earlier app repository revision/image version.

@@ -1,0 +1,10 @@
+{
+  "app": {"modules": ["api", "exec", "ffmpeg", "rtsp"]},
+  "api": {"listen": "127.0.0.1:11984"},
+  "rtsp": {"listen": "127.0.0.1:18554"},
+  "streams": {
+    "landscape": "exec:ffmpeg -hide_banner -loglevel error -re -f lavfi -i testsrc2=size=320x240:rate=15 -f lavfi -i sine=frequency=440:sample_rate=16000 -c:v libx264 -preset superfast -tune zerolatency -g 15 -c:a aac -f rtsp -rtsp_transport tcp {output}",
+    "wide": "exec:ffmpeg -hide_banner -loglevel error -re -f lavfi -i testsrc2=size=640x360:rate=15 -f lavfi -i sine=frequency=440:sample_rate=16000 -c:v libx264 -preset superfast -tune zerolatency -g 15 -c:a aac -f rtsp -rtsp_transport tcp {output}",
+    "portrait": "exec:ffmpeg -hide_banner -loglevel error -re -f lavfi -i testsrc2=size=240x320:rate=15 -f lavfi -i sine=frequency=440:sample_rate=16000 -c:v libx264 -preset superfast -tune zerolatency -g 15 -c:a aac -f rtsp -rtsp_transport tcp {output}"
+  }
+}

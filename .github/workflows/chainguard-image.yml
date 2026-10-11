@@ -14,6 +14,8 @@ on:
       - "go.sum"
       - "**/*.go"
       - "home-assistant/**"
+      - "scripts/**"
+      - "testdata/hassaddon/**"
 
 concurrency:
   group: chainguard-${{ github.ref }}
@@ -135,6 +137,9 @@ jobs:
             -hide_banner -loglevel error \
             -f lavfi -i anullsrc=channel_layout=mono:sample_rate=16000 \
             -t 0.1 -c:a aac -f null -
+
+      - name: Test generated app pipeline and offline-start recovery
+        run: bash scripts/test-app-runtime.sh go2rtc-chainguard:test
 
   publish:
     name: Publish signed multi-architecture image

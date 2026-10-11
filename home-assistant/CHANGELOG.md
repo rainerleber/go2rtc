@@ -2,6 +2,18 @@
 
 ## Next
 
+- Accept vendor-independent RTSP paths, ports and stream names, with automatic
+  migration of existing Reolink configurations.
+- Add structured output mode, preload, resolution, frame-rate, keyframe and
+  bitrate options, documented and translated in English and German.
+- Retry failed preloads independently with bounded backoff and cancellation.
+- Reduce compatibility GOP to one second, bound local probing and disable
+  frame reordering; preserve arbitrary source aspect ratios with scale/pad.
+- Add retry/cancellation, configuration/security tests and a real container
+  pipeline test for landscape, widescreen and portrait sources.
+- Correct camera account guidance: a new user is optional and device roles
+  are not necessarily limited to live view.
+
 - Keep the 1280x720 H.264/AAC Alexa transcode preloaded so Echo Show requests
   do not time out while FFmpeg and the camera stream start.
 - Feed the Alexa transcode from the shared local proxy to avoid a second
