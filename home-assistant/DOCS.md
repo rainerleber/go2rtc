@@ -42,8 +42,8 @@ Expose only that Generic Camera entity to Alexa.
 ## Updates and rollback
 
 The image is rebuilt weekly and after relevant source changes. The workflow
-publishes immutable date/run tags and updates this app's version only after the
-multi-architecture image was pushed successfully.
+publishes immutable `YYYY.MM.BUILD` CalVer tags and updates this app's version
+only after the multi-architecture image was pushed successfully.
 
 To roll back, select an earlier commit of this repository as an App Store
 repository branch, or restore the app from a Home Assistant backup.

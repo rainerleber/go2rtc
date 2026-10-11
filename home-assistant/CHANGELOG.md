@@ -6,6 +6,7 @@
   password and stream fields.
 - Generate the private loopback-only go2rtc configuration inside the app and
   safely URL-escape camera credentials.
+- Shorten published versions to the `YYYY.MM.BUILD` CalVer format.
 - Keep access limited to the app-specific configuration directory; no Home
   Assistant configuration mount or Supervisor API token is granted.
 

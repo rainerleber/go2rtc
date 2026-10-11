@@ -98,7 +98,8 @@ jobs:
       - name: Calculate immutable app version
         id: version
         shell: bash
-        run: echo "version=$(date -u +'%Y.%m.%d').${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+        # CalVer: calendar year, month, and a monotonically increasing build.
+        run: echo "version=$(date -u +'%Y.%m').${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
       - name: Build amd64 validation image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
