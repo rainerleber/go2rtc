@@ -76,7 +76,7 @@ func buildConfig(b []byte) ([]byte, error) {
 		"webrtc": map[string]string{"listen": ""},
 		"streams": map[string][]string{
 			"reolink_haustuer":       {cameraURL.String()},
-			"reolink_haustuer_alexa": {"ffmpeg:reolink_haustuer#video=h264#audio=aac#raw=-vf scale=960:720,pad=1280:720:160:0:black"},
+			"reolink_haustuer_alexa": {"ffmpeg:" + cameraURL.String() + "#video=h264#audio=aac#raw=-vf scale=960:720,pad=1280:720:160:0:black"},
 		},
 	}
 

@@ -2,6 +2,8 @@
 
 ## Next
 
+- Feed the Alexa transcode directly from the camera to avoid a nested RTSP
+  loop through go2rtc.
 - Enable the go2rtc exec handler required by generated FFmpeg streams.
 - Replace the raw YAML text area with labelled camera address, username,
   password and stream fields.
