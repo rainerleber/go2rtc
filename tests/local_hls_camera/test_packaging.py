@@ -21,7 +21,7 @@ def test_hacs_packaging():
         (root / "custom_components/local_hls_camera/manifest.json").read_text()
     )
     assert manifest["domain"] == "local_hls_camera"
-    assert manifest["version"] == "2026.10.3"
+    assert manifest["version"] == "2026.10.4"
     assert manifest["iot_class"] == "local_poll"
     assert manifest["requirements"] == []
     assert manifest["dependencies"] == ["camera", "http", "stream"]

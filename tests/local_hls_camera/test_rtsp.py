@@ -101,6 +101,7 @@ async def test_real_app_backend_and_authenticated_ha_path(
             first_sequence = int(
                 next(line.split(":")[1] for line in first if "MEDIA-SEQUENCE" in line)
             )
+            media_uris = {}
             # Cross fixture loops and >=12 live-window rotations, not just startup.
             for _ in range(80):
                 child = await client.get(child_url)
@@ -114,6 +115,12 @@ async def test_real_app_backend_and_authenticated_ha_path(
                 assert adapter.last_error is None
                 assert "EXT-X-MAP" not in "\n".join(lines)
                 assert not any("127.0.0.1" in line for line in lines)
+                children = [line for line in lines if not line.startswith("#")]
+                for index, uri in enumerate(children):
+                    number = sequence + index
+                    assert media_uris.setdefault(number, uri) == uri
+                master_again = await client.get(master_url)
+                assert (await master_again.text()).splitlines()[-1] == child_url
                 if sequence >= first_sequence + 12:
                     break
                 await asyncio.sleep(0.25)

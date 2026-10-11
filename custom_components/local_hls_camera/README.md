@@ -112,6 +112,15 @@ Sessions last at most 10 minutes with at most eight per camera. These URLs
 are bearer capabilities: never publish/log them. The existing read-only HA
 Content system user is reused; no account/token/password is created.
 
+Within a session, a published playlist/segment keeps the **same complete URI**,
+including its signature, across playlist reloads. Re-signing every reload
+changes HA's issued-at claim and can make strict HLS players stop after the
+initial buffer ([RFC 8216 section 6.3.4](https://www.rfc-editor.org/rfc/rfc8216.html#section-6.3.4)).
+The bridge caches only two playlist URL strings and at most 32 segment URL
+strings per session, matching the App's maximum retained segment count. It
+does not cache media. Signatures still expire, access checks remain per request,
+and expired/restarted sessions cannot use cached links to bypass validation.
+
 Configuration is admin-only; playback is **not inherently admin-only**:
 authorized HA users and holders of valid media capabilities can view it.
 Custom integrations run with HA process privileges and are not sandboxed.
@@ -136,7 +145,10 @@ uploads, playlists, shutdown/failure and real HLS/JPEG output. Python tests
 cover HA auth/ACL/signatures, expiry/generations, migration, redirect/size
 rejection, setup/unload and the native Alexa handler. End-to-end tests exercise
 RTSP → app → signed HA → independent decoder, repeated live-window rotations
-and App restart. Container tests also verify generated settings for landscape,
+and App restart. They also require identical complete segment URIs for every
+repeated media sequence, across real signing seconds and moving windows, and
+exercise bounded URL-cache eviction and unchanged playlist URLs. Container
+tests also verify generated settings for landscape,
 wide/portrait inputs and an initially offline camera. No personal media is committed.
 
 The preceding HA-owned remuxer had a user-confirmed Echo Show 15 (first
@@ -151,6 +163,14 @@ media 503. For discovery, expose one camera per name and sync Alexa; stale
 Amazon entries may need separate cleanup. Do not patch Core or expose App ports.
 
 ## Versions and rollback
+
+**2026.10.4:** bounded per-session signed-URL reuse fixes changing media URIs
+on playlist reloads. This is a bridge-only update: App 2026.10.29 stays installed,
+with no settings/config-entry migration, Core patch or additional permission.
+Download through HACS and restart Core to activate the Python fix. Rolling
+back this fix uses the preceding 2026.10.3 GitHub commit through HACS plus a
+Core restart; it does not require reverting the version-2 config entry.
+Actual sustained Echo playback still requires an operator test.
 
 **2026.10.3:** App-owned HLS/buffering/reconnect/snapshots; version-2 config
 migration preserves entity identity and removes the Generic-camera dependency.

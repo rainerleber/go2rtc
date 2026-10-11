@@ -9,7 +9,11 @@ import pytest
 from aiohttp import web
 from homeassistant.components.http.const import KEY_HASS_USER
 
-from custom_components.local_hls_camera.const import DOMAIN, MAX_SESSIONS
+from custom_components.local_hls_camera.const import (
+    DOMAIN,
+    MAX_SESSIONS,
+    MAX_SIGNED_SEGMENT_URLS,
+)
 from custom_components.local_hls_camera.http import HlsView
 from custom_components.local_hls_camera.stream import StreamAdapter
 
@@ -65,6 +69,25 @@ async def test_all_playlist_and_segment_urls_are_signed(client, adapter):
 
 
 @pytest.mark.asyncio
+async def test_playlist_reload_keeps_identical_media_uris(client, adapter):
+    """RFC 8216 6.3.4: a repeated segment must keep its complete signed URI."""
+    master_url = adapter.endpoint_url("hls")
+    response = await client.get(master_url)
+    child_url = (await response.text()).splitlines()[-1]
+    first = await client.get(child_url)
+    segment_url = (await first.text()).splitlines()[-1]
+    # HA includes an issued-at timestamp in each new signature. Cross a real
+    # signing second, rather than only comparing calls in the same second.
+    await asyncio.sleep(1.1)
+    second = await client.get(child_url)
+    assert second.status == 200
+    assert (await second.text()).splitlines()[-1] == segment_url
+    master_again = await client.get(master_url)
+    assert (await master_again.text()).splitlines()[-1] == child_url
+    assert (await client.get(segment_url)).status == 200
+
+
+@pytest.mark.asyncio
 async def test_expired_session_and_removed_camera(client, adapter):
     url = adapter.endpoint_url("hls")
     session = next(iter(adapter.sessions))
@@ -110,6 +133,30 @@ async def test_bounded_sessions_and_stop_revokes_urls(adapter):
     assert not adapter.sessions
     assert not adapter._status
     adapter.backend.start.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_signed_url_cache_is_bounded_and_preserves_playlist_urls(adapter):
+    master = adapter.endpoint_url("hls")
+    session = next(iter(adapter.sessions))
+    child = adapter.signed_url(session, "stream.m3u8")
+    value = adapter.sessions[session]
+    for index in range(MAX_SIGNED_SEGMENT_URLS + 20):
+        adapter.signed_url(session, f"segment-{index}.ts")
+    assert len(value.segment_urls) == MAX_SIGNED_SEGMENT_URLS
+    assert len(value.playlist_urls) == 2
+    assert "segment-0.ts" not in value.segment_urls
+    assert adapter.signed_url(session, "master.m3u8") == master
+    assert adapter.signed_url(session, "stream.m3u8") == child
+    recent = adapter.signed_url(session, "segment-51.ts")
+    adapter.signed_url(session, "segment-52.ts")
+    assert adapter.signed_url(session, "segment-51.ts") == recent
+    with pytest.raises(Exception, match="invalid media path"):
+        adapter.signed_url(session, "../other")
+    value.expires = time.monotonic() - 1
+    with pytest.raises(Exception, match="session expired"):
+        adapter.signed_url(session, "stream.m3u8")
+    assert session not in adapter.sessions
 
 
 @pytest.mark.asyncio

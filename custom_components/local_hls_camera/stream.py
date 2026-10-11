@@ -4,7 +4,7 @@ import asyncio
 import secrets
 import time
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
@@ -12,14 +12,28 @@ from homeassistant.components.http.auth import async_sign_path
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
-from .backend import BackendClient, BackendError, GenerationExpired, rewrite_playlist
-from .const import DOMAIN, MAX_SESSIONS, SESSION_SECONDS, STARTUP_SECONDS
+from .backend import (
+    SEGMENT_NAME,
+    BackendClient,
+    BackendError,
+    GenerationExpired,
+    rewrite_playlist,
+)
+from .const import (
+    DOMAIN,
+    MAX_SESSIONS,
+    MAX_SIGNED_SEGMENT_URLS,
+    SESSION_SECONDS,
+    STARTUP_SECONDS,
+)
 
 
 @dataclass
 class PlaybackSession:
     expires: float
     generation: str | None = None
+    playlist_urls: dict[str, str] = field(default_factory=dict)
+    segment_urls: OrderedDict[str, str] = field(default_factory=OrderedDict)
 
 
 class StreamAdapter:
@@ -132,13 +146,32 @@ class StreamAdapter:
     def signed_url(self, session: str, filename: str) -> str:
         if not self.valid_session(session):
             raise HomeAssistantError("Local HLS Camera session expired")
-        remaining = max(1, int(self.sessions[session].expires - time.monotonic()))
-        return async_sign_path(
+        value = self.sessions[session]
+        if filename in ("master.m3u8", "stream.m3u8"):
+            urls = value.playlist_urls
+        elif SEGMENT_NAME.fullmatch(filename):
+            urls = value.segment_urls
+        else:
+            raise HomeAssistantError("Local HLS Camera invalid media path")
+        if filename in urls:
+            if urls is value.segment_urls:
+                value.segment_urls.move_to_end(filename)
+            return urls[filename]
+        remaining = max(1, int(value.expires - time.monotonic()))
+        url = async_sign_path(
             self.hass,
             f"/api/{DOMAIN}/{self.entry_id}/{session}/{filename}",
             timedelta(seconds=remaining),
             use_content_user=True,
         )
+        # HA's signature includes issued-at time. Re-signing on every playlist
+        # reload changes a repeated segment's full URI, violating RFC 8216
+        # section 6.3.4 and causing strict players to halt. Cache URL strings
+        # only: expiry, entity ACLs and generation checks are still enforced.
+        urls[filename] = url
+        if len(value.segment_urls) > MAX_SIGNED_SEGMENT_URLS:
+            value.segment_urls.popitem(last=False)
+        return url
 
     async def wait_ready(self) -> dict:
         async with asyncio.timeout(STARTUP_SECONDS):
