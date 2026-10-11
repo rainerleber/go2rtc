@@ -5,7 +5,7 @@ independent Home Assistant app. It does not require the upstream app catalog
 and does not consume the upstream container image.
 
 The fork exists for one concrete local use case: normalize a Reolink doorbell
-RTSP stream to H.264/AAC in a 4:3 frame that Alexa/Echo Show can consume. The
+RTSP stream to H.264/AAC in a preloaded 1280x720 frame that Alexa/Echo Show can consume. The
 go2rtc source remains broadly compatible with upstream so security and protocol
 updates can still be reviewed and merged.
 

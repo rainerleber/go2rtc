@@ -2,8 +2,10 @@
 
 ## Next
 
-- Feed the Alexa transcode directly from the camera to avoid a nested RTSP
-  loop through go2rtc.
+- Keep the 1280x720 H.264/AAC Alexa transcode preloaded so Echo Show requests
+  do not time out while FFmpeg and the camera stream start.
+- Feed the Alexa transcode from the shared local proxy to avoid a second
+  camera connection.
 - Enable the go2rtc exec handler required by generated FFmpeg streams.
 - Replace the raw YAML text area with labelled camera address, username,
   password and stream fields.

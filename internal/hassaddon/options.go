@@ -70,13 +70,14 @@ func buildConfig(b []byte) ([]byte, error) {
 		Path:   fmt.Sprintf("/h264Preview_01_%s", suffix),
 	}
 	config := map[string]any{
-		"app":    map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
-		"api":    map[string]string{"listen": "127.0.0.1:1984"},
-		"rtsp":   map[string]string{"listen": "127.0.0.1:8554"},
-		"webrtc": map[string]string{"listen": ""},
+		"app":     map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
+		"api":     map[string]string{"listen": "127.0.0.1:1984"},
+		"preload": map[string]string{"reolink_haustuer_alexa": "video&audio"},
+		"rtsp":    map[string]string{"listen": "127.0.0.1:8554"},
+		"webrtc":  map[string]string{"listen": ""},
 		"streams": map[string][]string{
 			"reolink_haustuer":       {cameraURL.String()},
-			"reolink_haustuer_alexa": {"ffmpeg:" + cameraURL.String() + "#video=h264#audio=aac#raw=-vf scale=960:720,pad=1280:720:160:0:black"},
+			"reolink_haustuer_alexa": {"ffmpeg:reolink_haustuer#video=h264#audio=aac#raw=-vf scale=960:720,pad=1280:720:160:0:black"},
 		},
 	}
 

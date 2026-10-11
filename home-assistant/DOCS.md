@@ -18,6 +18,9 @@ Install **go2rtc Chainguard** and enter these settings on the Configuration tab:
 The app generates `/config/go2rtc.yaml` in its private configuration directory
 with mode 0600. Its API and RTSP listeners are fixed to loopback, WebRTC is
 disabled, and the Alexa-compatible stream is transcoded automatically.
+The transcoded stream stays preloaded because Echo Show accepts only a short
+startup delay. This uses continuous CPU while keeping camera credentials and
+all listeners local to the app.
 
 The corresponding Home Assistant Generic Camera stream source is:
 
