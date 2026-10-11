@@ -70,7 +70,7 @@ func buildConfig(b []byte) ([]byte, error) {
 		Path:   fmt.Sprintf("/h264Preview_01_%s", suffix),
 	}
 	config := map[string]any{
-		"app":    map[string]any{"modules": []string{"api", "ffmpeg", "rtsp"}},
+		"app":    map[string]any{"modules": []string{"api", "exec", "ffmpeg", "rtsp"}},
 		"api":    map[string]string{"listen": "127.0.0.1:1984"},
 		"rtsp":   map[string]string{"listen": "127.0.0.1:8554"},
 		"webrtc": map[string]string{"listen": ""},

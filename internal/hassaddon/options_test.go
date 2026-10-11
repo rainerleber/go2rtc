@@ -19,6 +19,9 @@ func TestBuildConfig(t *testing.T) {
 	if !strings.Contains(string(config), `"listen": "127.0.0.1:8554"`) {
 		t.Fatalf("RTSP listener is not loopback-only: %s", config)
 	}
+	if !strings.Contains(string(config), `"exec"`) {
+		t.Fatalf("FFmpeg sources require the exec module: %s", config)
+	}
 }
 
 func TestBuildConfigRejectsInvalidOptions(t *testing.T) {

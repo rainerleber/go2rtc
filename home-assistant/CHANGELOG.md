@@ -2,6 +2,7 @@
 
 ## Next
 
+- Enable the go2rtc exec handler required by generated FFmpeg streams.
 - Replace the raw YAML text area with labelled camera address, username,
   password and stream fields.
 - Generate the private loopback-only go2rtc configuration inside the app and
