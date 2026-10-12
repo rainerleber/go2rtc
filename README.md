@@ -18,10 +18,12 @@ For native Alexa playback, install the small
 [`Local HLS Camera` bridge](custom_components/local_hls_camera/README.md) through
 HACS. It forwards app media through HA's authenticated server, without encoding,
 demuxing, a segment ring, Core patches or additional app permissions.
-No intermediate Generic Camera is needed. The preceding HA-owned remuxer
-produced a confirmed Echo Show 15 live picture on 2026-10-11. The new app-owned
-backend is covered by synthetic end-to-end tests; actual Echo playback must
-still be verified after installation. Neither guarantees every Echo/camera.
+No intermediate Generic Camera is needed. Sustained native Echo Show 15
+playback with App 2026.10.30 and bridge 2026.10.4 was user-confirmed on
+2026-10-12 after an App-only update and a camera-only test without a gong.
+Synthetic end-to-end tests also cover the app-owned backend, signed playlist
+reloads and restart revocation. This does not guarantee every Echo/camera;
+verify sustained playback on the actual device after installation or updates.
 HLS sequences start at zero for each worker generation to accommodate older
 players with 32-bit playlist parsers. Generation-scoped URLs still reject old
 media after reconnects; see the [private HLS contract](internal/hls/README.md).

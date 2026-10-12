@@ -7,7 +7,8 @@
 - Keep generation-scoped playback and upload protection when segment filenames
   are reused after reconnects. Add regression and real-media sequence tests.
 - No App settings, privileges or HA bridge code change; only the App needs
-  updating. Sustained playback must still be verified on the actual Echo.
+  updating. Sustained native Echo Show 15 playback with bridge 2026.10.4 was
+  user-confirmed; verify the actual target device after updates.
 
 ## Next
 
