@@ -28,6 +28,10 @@ HLS sequences start at zero for each worker generation to accommodate older
 players with 32-bit playlist parsers. Generation-scoped URLs still reject old
 media after reconnects; see the [private HLS contract](internal/hls/README.md).
 
+Two generated [App icon concepts](assets/go2rtc-icons/README.md) are available
+with previews and their original prompts. They are alternatives for selection,
+not active App-store icons; uploading them does not change the installed App.
+
 ## Install in Home Assistant
 
 Add this repository under **Settings → Apps → App store → Repositories**:
