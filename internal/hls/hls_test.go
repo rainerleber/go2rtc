@@ -41,6 +41,60 @@ func transport() []byte {
 	return data
 }
 
+func TestWorkerUsesGenerationLocalSequence(t *testing.T) {
+	s := testServer(t)
+	args := s.args("synthetic")
+	for i, arg := range args {
+		if arg == "-start_number" {
+			if i+1 >= len(args) || args[i+1] != "0" {
+				t.Fatal("worker must start its generation at sequence zero for legacy HLS parsers")
+			}
+			return
+		}
+	}
+	t.Fatal("explicit generation-local sequence missing")
+}
+
+func TestGenerationRevokesReusedSegmentNames(t *testing.T) {
+	s := testServer(t)
+	oldGeneration := s.generation
+	oldUpload := s.uploadToken
+	fill := func(marker byte) {
+		data := transport()
+		data[10] = marker
+		for i := range 3 {
+			path := fmt.Sprintf("/internal/hls/%s/segment-%d.ts", s.uploadToken, i)
+			if call(s, "PUT", path, data).Code != 204 {
+				t.Fatal("synthetic segment rejected")
+			}
+		}
+		body := "#EXTM3U\n#EXT-X-VERSION:3\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:1.000000,\nsegment-0.ts\n#EXTINF:1.000000,\nsegment-1.ts\n#EXTINF:1.000000,\nsegment-2.ts\n"
+		if call(s, "PUT", "/internal/hls/"+s.uploadToken+"/index.m3u8", []byte(body)).Code != 204 {
+			t.Fatal("synthetic playlist rejected")
+		}
+	}
+	fill(1)
+	oldPath := "/api/hls/v1/test/segment-0.ts?generation=" + oldGeneration
+	if response := call(s, "GET", oldPath, nil); response.Code != 200 || response.Body.Bytes()[10] != 1 {
+		t.Fatal("first generation unavailable")
+	}
+	s.resetLocked(token())
+	s.info = mediaInfo{320, 180, "avc1.4d401f,mp4a.40.2"}
+	fill(2)
+	for _, name := range []string{"master.m3u8", "stream.m3u8", "segment-0.ts"} {
+		if call(s, "GET", "/api/hls/v1/test/"+name+"?generation="+oldGeneration, nil).Code != 410 {
+			t.Fatal("old generation accepted after segment names were reused")
+		}
+	}
+	if call(s, "PUT", "/internal/hls/"+oldUpload+"/segment-0.ts", transport()).Code != 404 {
+		t.Fatal("old upload capability accepted")
+	}
+	response := call(s, "GET", "/api/hls/v1/test/segment-0.ts?generation="+s.generation, nil)
+	if response.Code != 200 || response.Body.Bytes()[10] != 2 || response.Header().Get("X-HLS-Generation") != s.generation {
+		t.Fatal("new generation did not serve its own media")
+	}
+}
+
 func TestPrivateAPIAndCapabilities(t *testing.T) {
 	s := testServer(t)
 	for _, path := range []string{"/internal/hls/wrong/index.m3u8", "/api/hls/v1/other/status", "/internal/hls/synthetic/../../file"} {
@@ -231,5 +285,9 @@ func TestFFmpegRAMOutput(t *testing.T) {
 	body, _ := io.ReadAll(response.Body)
 	if response.StatusCode != 200 || strings.Contains(string(body), "http:") || strings.Contains(string(body), "EXT-X-MAP") {
 		t.Fatal("invalid HLS response")
+	}
+	list, err := parsePlaylist(string(body), s.config.SegmentCount)
+	if err != nil || list.sequence+uint64(len(list.items)) > 1<<31 {
+		t.Fatal("generated sequence exceeds legacy HLS parser range")
 	}
 }

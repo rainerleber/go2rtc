@@ -101,6 +101,7 @@ async def test_real_app_backend_and_authenticated_ha_path(
             first_sequence = int(
                 next(line.split(":")[1] for line in first if "MEDIA-SEQUENCE" in line)
             )
+            assert 0 <= first_sequence < 2**31
             media_uris = {}
             # Cross fixture loops and >=12 live-window rotations, not just startup.
             for _ in range(80):

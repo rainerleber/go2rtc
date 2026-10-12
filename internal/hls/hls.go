@@ -238,10 +238,13 @@ func (s *Server) run(ctx context.Context, done chan struct{}) {
 
 func (s *Server) args(uploadToken string) []string {
 	base := s.callbackURL + "/internal/hls/" + uploadToken + "/"
+	// Old HLS parsers read MEDIA-SEQUENCE as a signed 32-bit integer. Epoch
+	// microseconds overflow that range. Start each worker at zero: the separate
+	// generation and upload capabilities already isolate reused segment names.
 	return []string{"-hide_banner", "-loglevel", "error", "-nostdin", "-rtsp_transport", "tcp", "-timeout", "5000000", "-analyzeduration", "250000", "-probesize", "262144", "-i", s.input,
 		"-map", "0:v:0", "-map", "0:a:0", "-c", "copy", "-avoid_negative_ts", "make_zero", "-f", "hls", "-hls_segment_type", "mpegts",
 		"-hls_time", strconv.Itoa(s.config.SegmentSeconds), "-hls_list_size", strconv.Itoa(s.config.SegmentCount),
-		"-hls_flags", "independent_segments+omit_endlist", "-start_number", strconv.FormatInt(time.Now().UnixMicro(), 10),
+		"-hls_flags", "independent_segments+omit_endlist", "-start_number", "0",
 		"-method", "PUT", "-http_persistent", "0", "-hls_segment_filename", base + "segment-%d.ts", base + "index.m3u8"}
 }
 

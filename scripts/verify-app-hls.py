@@ -39,6 +39,10 @@ assert master.splitlines()[-1] == "stream.m3u8"
 assert "avc1.4d401f,mp4a.40.2" in master and "RESOLUTION=1280x720" in master
 playlist = fetch("stream.m3u8", 64 * 1024, generation).decode("ascii")
 assert "EXT-X-MAP" not in playlist and "http:" not in playlist
+sequence = int(
+    next(line.split(":")[1] for line in playlist.splitlines() if line.startswith("#EXT-X-MEDIA-SEQUENCE:"))
+)
+assert 0 <= sequence < 2**31, "Sequence exceeds legacy HLS parser range"
 name = playlist.splitlines()[-1]
 assert re.fullmatch(r"segment-[0-9]{1,20}\.ts", name)
 segment = fetch(name, 4 * 1024 * 1024, generation)

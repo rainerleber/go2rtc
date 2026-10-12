@@ -22,6 +22,9 @@ No intermediate Generic Camera is needed. The preceding HA-owned remuxer
 produced a confirmed Echo Show 15 live picture on 2026-10-11. The new app-owned
 backend is covered by synthetic end-to-end tests; actual Echo playback must
 still be verified after installation. Neither guarantees every Echo/camera.
+HLS sequences start at zero for each worker generation to accommodate older
+players with 32-bit playlist parsers. Generation-scoped URLs still reject old
+media after reconnects; see the [private HLS contract](internal/hls/README.md).
 
 ## Install in Home Assistant
 
