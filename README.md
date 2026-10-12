@@ -29,8 +29,9 @@ players with 32-bit playlist parsers. Generation-scoped URLs still reject old
 media after reconnects; see the [private HLS contract](internal/hls/README.md).
 
 Two generated [App icon concepts](assets/go2rtc-icons/README.md) are available
-with previews and their original prompts. They are alternatives for selection,
-not active App-store icons; uploading them does not change the installed App.
+with previews and their original prompts. Variant 1 is the App's active icon and
+logo; variant 2 remains an alternative. Branding is served from the repository
+through the native App store and does not require a container restart.
 
 ## Install in Home Assistant
 

@@ -9,9 +9,12 @@ Both files are unmodified generated PNG originals, 1254 × 1254 pixels.
 
 <img src="go2rtc-icon-v1.png" width="192" alt="Variant 1: camera and play symbol"> <img src="go2rtc-icon-v2.png" width="192" alt="Variant 2: streaming loop">
 
-These are alternative proposals, not two active App icons. Uploading this catalog
-does not replace the App-store icon or change Home Assistant. Neither variant has
-been selected or installed. The original prompts are recorded below for reuse.
+Variant 1 is selected for the App's active branding. Its unchanged PNG is also
+provided as [`home-assistant/icon.png`](../../home-assistant/icon.png) and
+[`home-assistant/logo.png`](../../home-assistant/logo.png), the native Home
+Assistant App-store assets. Variant 2 remains an alternative, not a second
+active identity. A store metadata refresh picks up the assets without changing
+the running container or its settings. The original prompts remain below.
 
 ## Prompt for variant 1
 
