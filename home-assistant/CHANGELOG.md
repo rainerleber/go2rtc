@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026.10.30
+
+- Start HLS media sequences at zero for each worker generation instead of
+  using epoch microseconds, preserving compatibility with older 32-bit parsers.
+- Keep generation-scoped playback and upload protection when segment filenames
+  are reused after reconnects. Add regression and real-media sequence tests.
+- No App settings, privileges or HA bridge code change; only the App needs
+  updating. Sustained playback must still be verified on the actual Echo.
+
 ## Next
 
 - Use the plain `go2rtc` app name and functional descriptions, without branding
