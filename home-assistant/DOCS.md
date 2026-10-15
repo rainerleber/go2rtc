@@ -186,7 +186,11 @@ device and rolled back if it does not fix playback. This app does not patch HA C
 ## Updates and rollback
 
 The image is rebuilt weekly and after relevant source changes. The workflow
-publishes immutable `YYYY.MM.BUILD` CalVer tags and updates this app's version
-only after the multi-architecture image was pushed successfully.
+publishes immutable `YYYY.MM.BUILD` CalVer tags after App and baseline/latest-HA
+integration tests pass. After the multi-architecture image is published and
+signed, it stamps the same version into the App and integration manifests and
+creates a matching GitHub release for HACS. Integration changes also rebuild the
+image; both release versions remain aligned. Installation remains separate:
+update the App first, then the HACS integration. CI never deploys or restarts HA.
 Take an app backup before updating. To roll back, restore that app backup or
 use an explicitly selected earlier app repository revision/image version.

@@ -9,11 +9,17 @@ on:
       - "**"
     paths:
       - ".github/workflows/chainguard-image.yml"
+      - ".github/workflows/local-hls-camera.yml"
       - "docker/Dockerfile"
       - "go.mod"
       - "go.sum"
       - "**/*.go"
       - "home-assistant/**"
+      - "custom_components/local_hls_camera/**"
+      - "tests/local_hls_camera/**"
+      - "requirements-extension-test.txt"
+      - "pyproject.toml"
+      - "hacs.json"
       - "scripts/**"
       - "testdata/hassaddon/**"
 
@@ -30,6 +36,10 @@ env:
   REGISTRY_IMAGE: ghcr.io/rainerleber/go2rtc-chainguard
 
 jobs:
+  integration:
+    name: Test Home Assistant integration
+    uses: ./.github/workflows/local-hls-camera.yml
+
   validate:
     name: Verify bases, build, and test
     runs-on: ubuntu-latest
@@ -165,7 +175,7 @@ jobs:
 
   publish:
     name: Publish signed multi-architecture image
-    needs: validate
+    needs: [validate, integration]
     if: >-
       github.ref == 'refs/heads/master' &&
       (github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
@@ -233,18 +243,25 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
-      - name: Update Home Assistant app version
+      - name: Publish matching App and HACS release
         env:
           VERSION: ${{ needs.validate.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         shell: bash
         run: |
           set -euo pipefail
-          sed -i -E "s/^version: .*/version: \"${VERSION}\"/" home-assistant/config.yaml
+          python3 scripts/release_version.py "$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add home-assistant/config.yaml
-          if git diff --cached --quiet; then
-            exit 0
+          git add home-assistant/config.yaml custom_components/local_hls_camera/manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(release): publish ${VERSION} [skip ci]"
           fi
-          git commit -m "chore(app): publish ${VERSION} [skip ci]"
+          # Fail closed if master advanced: never tag newer, untested code.
+          # This tag records the exact tested source plus its version stamp.
           git push origin HEAD:master
+          git tag "$VERSION"
+          git push origin "refs/tags/$VERSION"
+          gh release create "$VERSION" --verify-tag --title "$VERSION" --latest --generate-notes \
+            --notes "Unified go2rtc App and Local HLS Camera release ${VERSION}. The App image and integration manifest share this CalVer version. The signed multi-architecture image is ${REGISTRY_IMAGE}:${VERSION}. Integration branding is bundled locally. Update the App through the App store first, then the integration through HACS. CI does not deploy to or restart Home Assistant; follow the integration guide for activation and migration requirements."

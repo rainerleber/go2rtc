@@ -22,7 +22,7 @@ cloud-free. Keep the original camera for recording.
 1. Add `https://github.com/rainerleber/go2rtc` to the App store. Install **go2rtc**,
    configure its camera and enable `preload` for fast playback.
 2. In HACS Custom repositories, add `rainerleber/go2rtc`, category **Integration**.
-   Download **Local HLS Camera** from `master`. HACS installs only the custom
+   Download a numbered **Local HLS Camera** release. HACS installs only the custom
    component; the App store downloads the image built by GitHub Actions.
    Do not upload a local uncommitted worktree to production.
 3. Restart HA Core to load changed Python modules. A config-entry reload does
@@ -164,6 +164,27 @@ Amazon entries may need separate cleanup. Do not patch Core or expose App ports.
 
 ## Versions and rollback
 
+App and integration now use **one `YYYY.MM.BUILD` CalVer release**. GitHub
+Actions tests both components, publishes and signs the multi-architecture
+image, stamps both manifests, then creates the matching GitHub release. HACS
+offers that release rather than every unrelated default-branch commit.
+Weekly image rebuilds advance both release versions; components are still
+installed separately, App first. The version does not change media API v1 or
+config-entry version 2, and no settings migration accompanies this alignment.
+
+The integration now ships the same camera/play **icon and logo as the App** in
+`brand/icon.png` and `brand/logo.png`. HA's native brand API serves them locally
+and supplies dark/HiDPI fallbacks. There is no new web route, CDN dependency,
+account or permission. The first update needs a **Core restart** because HA's
+loader caches whether the integration has a `brand/` directory. HACS downloading
+files or reloading the config entry does not reliably invalidate that cache.
+
+For an already migrated bridge, selecting an earlier numbered release in HACS
+and the corresponding App image/backup reverses a release update. Review that
+release's migration notes first; historical pre-migration versions have the
+additional restore requirements below. No release is automatically deployed
+or restarted by CI.
+
 **2026.10.4:** bounded per-session signed-URL reuse fixes changing media URIs
 on playlist reloads. This is a bridge-only update: App 2026.10.29 stays installed,
 with no settings/config-entry migration, Core patch or additional permission.
@@ -180,9 +201,9 @@ timestamp limits are not misleadingly presented as current functionality.
 
 **2026.10.2:** previous HA-owned remuxer with per-track timestamp-jitter guard.
 
-App and integration have separate CalVer versions; HACS default-branch updates
-track commits, not image tags. Weekly container builds refresh base packages.
-Baseline/latest integration CI is read-only and does not deploy to live HA.
+Versions through 2026.10.4 used a separate bridge counter and HACS tracked
+default-branch commits. That legacy numbering is replaced by the shared release
+above. Baseline/latest integration CI is read-only and does not deploy to live HA.
 
 Before migration, rollback uses the App backup and previous GitHub/HACS code.
 **After migration**, old 2026.10.2 code cannot read the new config entry:

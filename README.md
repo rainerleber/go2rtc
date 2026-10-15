@@ -72,12 +72,15 @@ and release workflow. It:
 
 Relevant source pushes trigger validation on any branch. Only `master` publishes
 images to GHCR, on a push, the weekly schedule, or a manual workflow run.
+Both supported HA versions must also pass the reusable integration test workflow.
 After publishing and signing both the immutable CalVer tag and `latest`, the
-workflow commits the new version to `home-assistant/config.yaml`. Home Assistant
+workflow stamps the same version into `home-assistant/config.yaml` and the
+integration's `manifest.json`, then publishes a matching GitHub tag and release.
+Home Assistant
 downloads that published image when the app is installed or updated; the workflow
 does not restart or deploy to Home Assistant. Images are not uploaded from a
-local development machine. Changes limited to the root README or the
-`custom_components/local_hls_camera` tree do not trigger a container rebuild.
+local development machine. Integration changes also trigger a full release, so
+App and integration versions cannot drift. Root README-only changes do not.
 
 The existing app slug, registry image path and workflow filename are retained
 as compatibility identifiers, not display names. This preserves installed app
@@ -88,20 +91,32 @@ All third-party GitHub Actions are pinned to commit hashes. The validation job
 has read-only repository access; write permissions exist only in the `master`
 publish job.
 
-[`local-hls-camera.yml`](.github/workflows/local-hls-camera.yml) separately tests
+[`local-hls-camera.yml`](.github/workflows/local-hls-camera.yml) tests
 the optional HA integration against its supported baseline and the latest HA
-release, on changes and every Monday. It has read-only repository permissions,
+release. It is required by each container build and also runs for pull requests,
+manually and every Monday. It has read-only repository permissions,
 uses synthetic camera fixtures, and does not deploy to anyone's Home Assistant.
 
 ## Install the optional HLS integration through HACS
 
 In HACS, add `rainerleber/go2rtc` as a **custom repository**, category
-**Integration**, then download **Local HLS Camera** from the default branch
-(`master`). HACS installs only `custom_components/local_hls_camera`, not the Go
+**Integration**, then download a numbered **Local HLS Camera** release.
+HACS installs only `custom_components/local_hls_camera`, not the Go
 sources or the container app. Follow the
 [integration setup, security and update guide](custom_components/local_hls_camera/README.md).
-The app's container CalVer and the integration's manifest version are separate;
-HACS tracks the repository commit when downloading the default branch.
+App image, App metadata, GitHub release and integration manifest share the
+same `YYYY.MM.BUILD` CalVer. HACS uses releases, not default-branch commit
+hashes. They remain two independently installed components: update the App
+first, then the integration. A matching release number is not a new media API
+or config-entry version, and weekly base-image rebuilds do not require a
+new bridge configuration.
+
+The integration bundles the App's camera/play icon and logo in its native
+`brand/` directory. Home Assistant serves them locally, including dark/HiDPI
+fallbacks; no brands-repository submission, Core patch or extra privilege is
+needed. After the first HACS branding update, restart Core once: HA caches
+whether a loaded integration has branding. A browser refresh alone cannot
+update that loader metadata.
 
 ## Runtime security model
 

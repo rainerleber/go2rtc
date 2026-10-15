@@ -1,20 +1,10 @@
 name: Local HLS Camera tests
 
 on:
+  workflow_call:
   workflow_dispatch:
   schedule:
     - cron: "43 4 * * 1"
-  push:
-    paths:
-      - "custom_components/local_hls_camera/**"
-      - "tests/local_hls_camera/**"
-      - "requirements-extension-test.txt"
-      - "pyproject.toml"
-      - "hacs.json"
-      - "internal/hls/**"
-      - "internal/hassaddon/**"
-      - "main.go"
-      - ".github/workflows/local-hls-camera.yml"
   pull_request:
     paths:
       - "custom_components/local_hls_camera/**"
@@ -22,6 +12,11 @@ on:
       - "requirements-extension-test.txt"
       - "pyproject.toml"
       - "hacs.json"
+      - "home-assistant/config.yaml"
+      - "home-assistant/icon.png"
+      - "home-assistant/logo.png"
+      - "scripts/release_version.py"
+      - ".github/workflows/chainguard-image.yml"
       - "internal/hls/**"
       - "internal/hassaddon/**"
       - "main.go"
