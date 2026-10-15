@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/apps/configuration
 name: go2rtc
-version: "2026.10.31"
+version: "2026.10.32"
 slug: go2rtc_chainguard
 description: Local camera media backend with H.264/AAC, MPEG-TS HLS and snapshots
 url: "https://github.com/rainerleber/go2rtc/tree/master/home-assistant"
